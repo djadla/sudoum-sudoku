@@ -1,0 +1,60 @@
+# 빌드·테스트 후 GitHub Pages에 배포한다. (ADR-0001)
+# - PR: 타입 검사·테스트·빌드까지만 실행한다.
+# - main push / 수동 실행: 위 단계를 통과하면 Pages에 배포한다.
+name: CI / Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 배포가 겹치면 진행 중인 배포는 끝까지 두고, 대기 중인 것만 최신으로 교체한다.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm 버전은 package.json의 packageManager 필드를 따른다.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+
+      # dist/를 tar로 묶어 이 실행의 아티팩트(github-pages)로 올린다.
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

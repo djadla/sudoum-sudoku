@@ -11,6 +11,7 @@
 - 요청받은 범위만 수정한다. 관련 없는 리팩터링이나 포맷 변경은 하지 않는다.
 - 주변 코드의 스타일(네이밍, 주석 밀도, 패턴)을 따른다.
 - 결정이 필요한 사항(버전, 라이브러리, 외부 서비스, 데이터 구조 변경 등)은 추천안과 근거를 함께 제시하고 사용자 확인을 받는다. 중요한 결정은 `docs/adr/`에 ADR로 남긴다.
+  - ADR 파일명: `ADR-<4자리 번호>-<영문 kebab-case 제목>.md` (예: `ADR-0001-deployment-method.md`). 번호는 이어서 매기고 재사용하지 않는다.
 - 확인하지 않은 내용을 사실처럼 말하지 않는다. 빌드·테스트 결과는 실제로 실행한 결과만 보고한다.
 
 ## 2. Git 규칙
@@ -24,8 +25,8 @@
 
 - 목적: 서버 없이 브라우저에서 동작하는 스도쿠 두뇌 게임. GitHub Pages(`https://djadla.github.io/sudoum-sudoku/`)로 공개한다.
 - 기술: React, Vite, TypeScript, pnpm, Vitest. 퍼즐 엔진은 `sudoku-core`(MIT).
-- 배포: GitHub Actions가 빌드·테스트 후 Pages에 배포한다. 빌드 결과물(`dist/`)은 커밋하지 않는다. ([ADR-0001](docs/adr/0001-deployment-method.md))
-- 화면 언어: 한국어·영어를 지원하고, 다른 언어를 추가할 수 있는 구조로 만든다. 화면 문자열을 컴포넌트에 직접 쓰지 않는다. (다국어 구조는 ADR-0002에서 정한다)
+- 배포: GitHub Actions가 빌드·테스트 후 Pages에 배포한다. 빌드 결과물(`dist/`)은 커밋하지 않는다. ([ADR-0001](docs/adr/ADR-0001-deployment-method.md))
+- 화면 언어: 한국어·영어를 지원하고, 다른 언어를 추가할 수 있는 구조로 만든다. 화면 문자열을 컴포넌트에 직접 쓰지 않는다. ([ADR-0002](docs/adr/ADR-0002-i18n-structure.md))
 - 요구사항 원문: [docs/CLAUDE_HANDOFF.md](docs/CLAUDE_HANDOFF.md)
 
 ### 디렉터리 구조

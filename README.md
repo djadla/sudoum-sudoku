@@ -20,7 +20,7 @@ pnpm preview    # 빌드 결과 미리 보기
 
 ## 배포
 
-`main`에 push하면 GitHub Actions가 타입 검사·테스트·빌드를 거쳐 GitHub Pages에 배포합니다. 저장소 **Settings → Pages → Source**를 **GitHub Actions**로 설정해야 합니다. 자세한 내용은 [ADR-0001](docs/adr/0001-deployment-method.md)을 참고하세요.
+`main`에 push하면 GitHub Actions가 타입 검사·테스트·빌드를 거쳐 GitHub Pages에 배포합니다. 저장소 **Settings → Pages → Source**를 **GitHub Actions**로 설정해야 합니다. 자세한 내용은 [ADR-0001](docs/adr/ADR-0001-deployment-method.md)을 참고하세요.
 
 ## 문서
 

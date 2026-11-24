@@ -37,6 +37,37 @@ body {
   text-align: center;
 }
 
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.language-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.language-select select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--cell-bg);
+  border: 1px solid var(--line-thin);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);

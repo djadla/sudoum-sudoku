@@ -10,8 +10,24 @@ const en = {
   },
   board: {
     label: 'Sudoku board',
+    cellGiven: 'Row {row}, column {col}: {value}, given',
     cellFilled: 'Row {row}, column {col}: {value}',
     cellEmpty: 'Row {row}, column {col}: empty',
+    cellNotes: 'Row {row}, column {col}: empty, notes {notes}',
+  },
+  controls: {
+    label: 'Controls',
+    digitInput: 'Enter {digit}',
+    digitNote: 'Toggle note {digit}',
+    erase: 'Erase',
+    notes: 'Notes',
+    on: 'On',
+    off: 'Off',
+    newPuzzle: 'New puzzle',
+    keyboardHint: 'Keyboard: 1–9 enter · N notes · Backspace erase · arrows move',
+  },
+  status: {
+    solved: 'Solved! Well done.',
   },
   puzzle: {
     meta: 'Level {level} · Seed {seed}',

@@ -4,6 +4,8 @@ import { createPuzzle } from '../engine/puzzle';
 import {
   HISTORY_LIMIT,
   canRedo,
+  canUseHint,
+  findWrongValue,
   canUndo,
   createGame,
   gameReducer,
@@ -272,5 +274,109 @@ describe('실행 취소·다시 하기', () => {
     const solved = run(...actions);
     expect(canUndo(solved)).toBe(false);
     expect(gameReducer(solved, { type: 'undo' })).toBe(solved);
+  });
+});
+
+describe('힌트', () => {
+  it('남은 힌트를 1씩 쓰고 0 아래로는 내려가지 않는다', () => {
+    let state = createGame(puzzle, 2);
+    expect(canUseHint(state)).toBe(true);
+    state = gameReducer(state, { type: 'useHint' });
+    state = gameReducer(state, { type: 'useHint' });
+    expect(state.hintsLeft).toBe(0);
+    expect(canUseHint(state)).toBe(false);
+    expect(gameReducer(state, { type: 'useHint' })).toBe(state);
+  });
+
+  it('힌트 사용은 실행 취소로 돌아오지 않는다', () => {
+    let state = createGame(puzzle, 1);
+    state = gameReducer(state, { type: 'select', index: firstEmpty });
+    state = gameReducer(state, { type: 'input', digit: wrong });
+    state = gameReducer(state, { type: 'useHint' });
+    state = gameReducer(state, { type: 'undo' });
+    expect(state.hintsLeft).toBe(0);
+  });
+
+  it('정답과 다른 첫 숫자를 찾는다 (주어진 숫자·정답 숫자는 제외)', () => {
+    const second = puzzle.givens.findIndex((v, i) => v === 0 && i > firstEmpty);
+    let state = createGame(puzzle);
+    expect(findWrongValue(state)).toBeNull();
+    state = gameReducer(state, { type: 'select', index: firstEmpty });
+    state = gameReducer(state, { type: 'input', digit: answer });
+    state = gameReducer(state, { type: 'select', index: second });
+    state = gameReducer(state, { type: 'input', digit: (puzzle.solution[second]! % 9) + 1 });
+    expect(findWrongValue(state)).toEqual({
+      kind: 'wrongValue',
+      cell: second,
+      digit: (puzzle.solution[second]! % 9) + 1,
+    });
+  });
+
+  it('틀린 숫자 힌트를 적용하면 그 숫자를 지우고 칸을 선택하며, 실행 취소로 되돌릴 수 있다', () => {
+    let state = run({ type: 'select', index: firstEmpty }, { type: 'input', digit: wrong }, { type: 'select', index: 0 });
+    const hint = findWrongValue(state)!;
+    state = gameReducer(state, { type: 'applyHint', hint });
+    expect(state.values[firstEmpty]).toBe(0);
+    expect(state.selected).toBe(firstEmpty);
+    expect(gameReducer(state, { type: 'undo' }).values[firstEmpty]).toBe(wrong);
+  });
+
+  it('배치 힌트는 숫자를 넣고 이웃의 같은 숫자 메모를 지운다', () => {
+    const peer = peersOf(firstEmpty).find((index) => puzzle.givens[index] === 0)!;
+    let state = run({ type: 'toggleNoteMode' }, { type: 'select', index: peer }, { type: 'input', digit: answer });
+    state = gameReducer(state, {
+      type: 'applyHint',
+      hint: {
+        kind: 'technique',
+        tactic: 'nakedSingle',
+        action: 'place',
+        digit: answer,
+        focusCell: firstEmpty,
+        regionCells: [],
+        patternCells: [firstEmpty],
+        patternDigits: [answer],
+        placements: [{ index: firstEmpty, digit: answer }],
+        eliminations: [],
+        candidates: Array(81).fill(0),
+      },
+    });
+    expect(state.values[firstEmpty]).toBe(answer);
+    expect(hasNote(state.notes[peer]!, answer)).toBe(false);
+  });
+
+  it('후보 지우기 힌트는 메모가 없던 칸을 힌트의 후보로 채운 뒤 지운다', () => {
+    const candidates = Array<number>(81).fill(0);
+    candidates[firstEmpty] = (1 << 2) | (1 << 5) | (1 << 8);
+    const state = gameReducer(createGame(puzzle), {
+      type: 'applyHint',
+      hint: {
+        kind: 'technique',
+        tactic: 'pointing',
+        action: 'eliminate',
+        digit: 5,
+        focusCell: firstEmpty,
+        regionCells: [],
+        patternCells: [],
+        patternDigits: [5],
+        placements: [],
+        eliminations: [{ index: firstEmpty, digit: 5 }],
+        candidates,
+      },
+    });
+    expect(noteDigits(state.notes[firstEmpty]!)).toEqual([2, 8]);
+  });
+
+  it('메모 점검 힌트: 들어갈 수 없는 메모를 지우고, 빠진 메모를 더한다', () => {
+    let state = run({ type: 'select', index: firstEmpty }, { type: 'toggleNoteMode' }, { type: 'input', digit: 4 });
+    state = gameReducer(state, { type: 'applyHint', hint: { kind: 'impossibleNote', cell: firstEmpty, digit: 4 } });
+    expect(state.notes[firstEmpty]).toBe(0);
+    state = gameReducer(state, { type: 'applyHint', hint: { kind: 'missingNote', cell: firstEmpty, digit: 6 } });
+    expect(noteDigits(state.notes[firstEmpty]!)).toEqual([6]);
+  });
+
+  it('주어진 숫자 칸을 바꾸는 힌트나 바뀌는 것이 없는 힌트는 무시한다', () => {
+    const state = createGame(puzzle);
+    expect(gameReducer(state, { type: 'applyHint', hint: { kind: 'wrongValue', cell: firstGiven, digit: 1 } })).toBe(state);
+    expect(gameReducer(state, { type: 'applyHint', hint: { kind: 'impossibleNote', cell: firstEmpty, digit: 4 } })).toBe(state);
   });
 });

@@ -1,4 +1,5 @@
 import { colOf, indexOf, isSolved, peersOf, rowOf } from '../engine/grid';
+import type { HintView } from '../engine/hintTypes';
 import { CELL_COUNT, type Puzzle } from '../engine/types';
 
 /** 칸별 메모. 숫자 d의 메모는 비트 (1 << d)로 표시한다. 0이면 메모 없음. */
@@ -26,6 +27,8 @@ export interface GameState {
   readonly status: GameStatus;
   readonly past: readonly HistoryEntry[];
   readonly future: readonly HistoryEntry[];
+  /** 이 퍼즐에서 남은 힌트 횟수. 실행 취소 기록에 넣지 않는다. (ADR-0003) */
+  readonly hintsLeft: number;
 }
 
 export type GameAction =
@@ -35,7 +38,11 @@ export type GameAction =
   | { readonly type: 'erase' }
   | { readonly type: 'toggleNoteMode' }
   | { readonly type: 'undo' }
-  | { readonly type: 'redo' };
+  | { readonly type: 'redo' }
+  /** 힌트를 보여 줄 때 1회 쓴다. */
+  | { readonly type: 'useHint' }
+  /** 보여 준 힌트를 보드에 반영한다. 실행 취소 기록에 한 번의 변경으로 남는다. */
+  | { readonly type: 'applyHint'; readonly hint: HintView };
 
 export const noteBit = (digit: number): NoteMask => 1 << digit;
 
@@ -56,7 +63,7 @@ export function isGiven(state: GameState, index: number): boolean {
 export const canUndo = (state: GameState): boolean => state.status === 'playing' && state.past.length > 0;
 export const canRedo = (state: GameState): boolean => state.status === 'playing' && state.future.length > 0;
 
-export function createGame(puzzle: Puzzle): GameState {
+export function createGame(puzzle: Puzzle, hintsLeft = 0): GameState {
   return {
     puzzle,
     values: [...puzzle.givens],
@@ -66,6 +73,7 @@ export function createGame(puzzle: Puzzle): GameState {
     status: 'playing',
     past: [],
     future: [],
+    hintsLeft,
   };
 }
 
@@ -74,9 +82,27 @@ export function restoreGame(
   puzzle: Puzzle,
   values: readonly number[],
   notes: readonly NoteMask[],
+  hintsLeft = 0,
 ): GameState {
   const status = isSolved(values, puzzle.solution) ? 'solved' : 'playing';
-  return { ...createGame(puzzle), values: [...values], notes: [...notes], status };
+  return { ...createGame(puzzle, hintsLeft), values: [...values], notes: [...notes], status };
+}
+
+export const canUseHint = (state: GameState): boolean => state.status === 'playing' && state.hintsLeft > 0;
+
+/**
+ * 사용자가 넣은 숫자 중 정답과 다른 첫 칸을 찾는다. 없으면 null.
+ * 충돌 표시는 중복만 잡으므로, 힌트는 다음 수를 계산하기 전에 이것부터 알려 준다. (ADR-0003 5번)
+ */
+export function findWrongValue(state: GameState): HintView | null {
+  const { values, puzzle } = state;
+  for (let index = 0; index < CELL_COUNT; index++) {
+    const value = values[index]!;
+    if (value !== 0 && puzzle.givens[index] === 0 && value !== puzzle.solution[index]) {
+      return { kind: 'wrongValue', cell: index, digit: value };
+    }
+  }
+  return null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -122,6 +148,51 @@ function erase(state: GameState, index: number): GameState {
   values[index] = 0;
   notes[index] = 0;
   return commit(state, index, values, notes);
+}
+
+/** 힌트가 바꾸는 칸 중 대표 칸 (적용 후 선택·실행 취소 시 선택할 칸) */
+function hintCell(hint: HintView): number | null {
+  if (hint.kind !== 'technique') return hint.cell;
+  return hint.focusCell ?? hint.placements[0]?.index ?? hint.eliminations[0]?.index ?? null;
+}
+
+function applyHint(state: GameState, hint: HintView): GameState {
+  const index = hintCell(hint);
+  if (index === null) return state;
+  const values = [...state.values];
+  const notes = [...state.notes];
+
+  switch (hint.kind) {
+    case 'technique':
+      for (const { index: cell, digit } of hint.placements) {
+        if (isGiven(state, cell)) return state;
+        values[cell] = digit;
+        notes[cell] = 0;
+        for (const peer of peersOf(cell)) notes[peer] = notes[peer]! & ~noteBit(digit);
+      }
+      for (const { index: cell, digit } of hint.eliminations) {
+        if (values[cell] !== 0) continue;
+        // 메모를 쓰지 않은 칸은 힌트가 본 후보로 채운 뒤 지운다. (ADR-0003 4번)
+        const base = notes[cell] || hint.candidates[cell]!;
+        notes[cell] = base & ~noteBit(digit);
+      }
+      break;
+    case 'impossibleNote':
+      notes[hint.cell] = notes[hint.cell]! & ~noteBit(hint.digit);
+      break;
+    case 'missingNote':
+      if (values[hint.cell] !== 0) return state;
+      notes[hint.cell] = notes[hint.cell]! | noteBit(hint.digit);
+      break;
+    case 'wrongValue':
+      if (isGiven(state, hint.cell)) return state;
+      values[hint.cell] = 0;
+      break;
+  }
+
+  const changed = values.some((v, i) => v !== state.values[i]) || notes.some((n, i) => n !== state.notes[i]);
+  if (!changed) return state;
+  return { ...commit(state, index, values, notes), selected: index };
 }
 
 /** 기록 하나를 꺼내 보드를 되돌리고, 현재 보드는 반대쪽 기록에 넣는다. 바뀐 칸을 선택한다. */
@@ -172,5 +243,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'redo':
       return canRedo(state) ? travel(state, 'redo') : state;
+
+    case 'useHint':
+      return canUseHint(state) ? { ...state, hintsLeft: state.hintsLeft - 1 } : state;
+
+    case 'applyHint':
+      return state.status === 'playing' ? applyHint(state, action.hint) : state;
   }
 }

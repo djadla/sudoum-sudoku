@@ -41,7 +41,7 @@ src/
   engine/   퍼즐 생성·검증·힌트. sudoku-core를 감싸는 계층. React에 의존하지 않는다
   game/     게임 상태 (보드, 메모, 선택 칸, 실행 취소·다시 하기)
   ui/       화면 컴포넌트
-  workers/  퍼즐 생성 Web Worker
+  workers/  퍼즐 생성·힌트 계산 Web Worker
 docs/
   adr/      아키텍처 결정 기록
 .github/workflows/deploy.yml  CI 및 Pages 배포
@@ -50,7 +50,7 @@ docs/
 ### 의존 규칙
 
 - 의존 방향: `ui → game → engine`. `engine`은 React·DOM·브라우저 저장소에 의존하지 않는다.
-- 퍼즐 생성(`sudoku-core`)은 `src/workers/`를 거쳐 Web Worker에서 한다. `ui`·`game`은 `engine/puzzle.ts`를 직접 import하지 않고 타입·상수는 `engine/types.ts`에서 가져온다. (메인 번들에 생성 코드가 들어가 화면이 멈추거나 번들이 커지는 것을 막기 위해서다)
+- 퍼즐 생성·힌트 계산(`sudoku-core`)은 `src/workers/`를 거쳐 Web Worker에서 한다. 힌트 정책은 [ADR-0003](docs/adr/ADR-0003-hint-policy.md)을 따른다. `ui`·`game`은 `engine/puzzle.ts`·`engine/hint.ts`를 직접 import하지 않고 타입·상수는 `engine/types.ts`·`engine/hintTypes.ts`에서 가져온다. (메인 번들에 생성 코드가 들어가 화면이 멈추거나 번들이 커지는 것을 막기 위해서다)
 - 서버·런타임 백엔드 의존을 추가하지 않는다.
 - 정적 자원 경로는 하드코딩하지 않고 Vite의 `base`(`/sudoum-sudoku/`)와 `import.meta.env.BASE_URL`을 따른다.
 - 외부 코드를 복사하거나 패키지를 추가할 때는 라이선스 호환성(MIT 등)을 확인하고 사용자에게 알린다.

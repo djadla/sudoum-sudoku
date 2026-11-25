@@ -28,3 +28,12 @@ export function isDifficultyId(value: unknown): value is DifficultyId {
 export function levelOf(id: DifficultyId): PuzzleLevel {
   return DIFFICULTY_LEVELS[id];
 }
+
+/** 퍼즐당 힌트 횟수. (ADR-0003) */
+export const HINT_ALLOWANCE: Record<DifficultyId, number> = {
+  easy: 0,
+  medium: 1,
+  hard: 3,
+  expert: 5,
+  master: 5,
+};

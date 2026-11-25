@@ -225,4 +225,119 @@ describe('App', () => {
     await user.click(help);
     expect(dialog.open).toBe(true);
   });
+
+  describe('힌트 (실제 계산)', () => {
+    /** 보통(힌트 1회)으로 시작한다. 퍼즐은 쉬운 퍼즐에 레벨만 바꿔 쓴다. */
+    async function startMedium() {
+      localStorage.setItem(DIFFICULTY_KEY, 'medium');
+      renderWithI18n(<App />);
+      expect(requests.map((r) => r.level)).toEqual(['L4']);
+      await resolveLast(asLevel('L4', 4242));
+      return screen.getByRole('button', { name: 'Hint 1' }) as HTMLButtonElement;
+    }
+
+    it('쉬움은 힌트가 0회라 버튼이 비활성이다', async () => {
+      renderWithI18n(<App />);
+      await resolveLast(easy);
+      expect((screen.getByRole('button', { name: 'Hint 0' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('힌트를 보여 주면 1회를 쓰고, 적용하면 정답을 채우며 숫자 패드로 돌아온다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+
+      const panel = await screen.findByRole('region', { name: /Single|Pointing|Pair/ });
+      expect(within(panel).getByRole('button', { name: 'Apply' })).toBeTruthy();
+      expect(document.activeElement?.textContent).toBe('Apply');
+      expect(screen.queryByRole('button', { name: 'Enter 1' })).toBeNull(); // 숫자 패드 대신 힌트
+      expect((screen.getByRole('button', { name: 'Hint 0' }) as HTMLButtonElement).disabled).toBe(true);
+      expect(savedJson().hintsLeft).toBe(0);
+
+      const focus = cells().findIndex((cell) => cell.hasAttribute('data-hint-focus'));
+      expect(focus).toBeGreaterThanOrEqual(0);
+      expect(cells()[focus]!.getAttribute('aria-label')).toMatch(/, hint$/);
+
+      await user.click(within(panel).getByRole('button', { name: 'Apply' }));
+      expect(screen.queryByRole('region')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Enter 1' })).toBeTruthy();
+      expect(cells()[focus]!.textContent).toBe(String(easy.solution[focus]));
+      // 적용하면 바뀐 칸으로 포커스가 간다.
+      expect(document.activeElement).toBe(cells()[focus]);
+    });
+
+    it('틀린 숫자가 있으면 다음 수보다 먼저 그 칸을 알려 주고, 적용하면 지운다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      const firstEmpty = easy.givens.findIndex((value) => value === 0);
+      const wrong = (easy.solution[firstEmpty]! % 9) + 1;
+      await user.click(cells()[firstEmpty]!);
+      await user.keyboard(String(wrong));
+      await user.click(button);
+
+      const panel = screen.getByRole('region', { name: 'Wrong number' });
+      expect(panel.textContent).toContain(`The ${wrong} in`);
+      expect(cells()[firstEmpty]!.hasAttribute('data-hint-wrong')).toBe(true);
+      await user.click(within(panel).getByRole('button', { name: 'Apply' }));
+      expect(cells()[firstEmpty]!.textContent).toBe('');
+    });
+
+    it('Esc로 닫고, 남은 힌트가 없어 버튼이 비활성이면 보드 칸으로 포커스를 옮긴다 (횟수는 이미 썼다)', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+      await screen.findByRole('region');
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('region')).toBeNull();
+      expect((screen.getByRole('button', { name: 'Hint 0' }) as HTMLButtonElement).disabled).toBe(true);
+      expect(document.activeElement?.getAttribute('role')).toBe('gridcell');
+    });
+
+    it('힌트와 새 게임 메뉴가 함께 열려 있으면 Esc 한 번에 메뉴만 닫고 메뉴 버튼으로 포커스를 돌려준다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+      await screen.findByRole('region');
+      const toggle = screen.getByRole('button', { name: 'New game' });
+      await user.click(toggle);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+      await user.keyboard('{Escape}');
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(screen.getByRole('region')).toBeTruthy(); // 힌트는 그대로
+      expect(document.activeElement).toBe(toggle);
+
+      // 한 번 더 누르면 이제 힌트를 닫는다.
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('region')).toBeNull();
+    });
+
+    it('메뉴가 열린 채 도움말을 열면, 대화상자 안의 Esc는 메뉴가 가로채지 않는다', async () => {
+      const user = userEvent.setup();
+      await startMedium();
+      const toggle = screen.getByRole('button', { name: 'New game' });
+      await user.click(toggle);
+      await user.click(screen.getByRole('button', { name: 'How to play' }));
+      const dialog = screen.getByRole('dialog') as HTMLDialogElement;
+
+      const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+      act(() => {
+        within(dialog).getByRole('button', { name: 'Close' }).dispatchEvent(esc);
+      });
+      // 메뉴가 preventDefault()하면 브라우저가 대화상자를 닫지 못한다.
+      expect(esc.defaultPrevented).toBe(false);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('힌트를 보는 중에 보드를 바꾸면 힌트를 닫는다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+      await screen.findByRole('region');
+      const other = easy.givens.findIndex((value, index) => value === 0 && !cells()[index]!.hasAttribute('data-hint-focus'));
+      await user.click(cells()[other]!);
+      await user.keyboard(String(easy.solution[other]));
+      expect(screen.queryByRole('region')).toBeNull();
+    });
+  });
 });

@@ -8,7 +8,14 @@ interface GuideDialogProps {
 }
 
 const RULES = ['guide.rule1', 'guide.rule2', 'guide.rule3'] as const satisfies readonly MessageKey[];
-const PLAY = ['guide.play1', 'guide.play2', 'guide.play3', 'guide.play4', 'guide.play5'] as const satisfies readonly MessageKey[];
+const PLAY = [
+  'guide.play1',
+  'guide.play2',
+  'guide.play3',
+  'guide.play4',
+  'guide.play5',
+  'guide.play6',
+] as const satisfies readonly MessageKey[];
 const KEYS = [
   ['guide.keyDigits', 'guide.keyDigitsDesc'],
   ['guide.keyErase', 'guide.keyEraseDesc'],

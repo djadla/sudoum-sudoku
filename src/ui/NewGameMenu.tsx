@@ -22,16 +22,22 @@ export function NewGameMenu({ current, onNewGame }: NewGameMenuProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // 열면 현재 난이도 버튼으로 포커스를 옮기고, Esc로 닫으면 "새 게임" 버튼으로 돌려준다.
+  // Esc 한 번에는 맨 위의 화면 하나만 닫는다: 메뉴는 힌트보다 위에 뜨므로 capture 단계에서 먼저 받고,
+  // preventDefault()로 처리했음을 알린다. (힌트는 이미 처리된 Esc를 무시한다, Game.tsx)
   useEffect(() => {
     if (!open) return;
     panelRef.current?.querySelector<HTMLButtonElement>('[aria-current="true"]')?.focus();
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      // 모달 대화상자(도움말)는 메뉴보다 위에 있으므로 그 안의 Esc는 대화상자가 닫도록 그대로 둔다.
+      // (여기서 preventDefault()하면 브라우저의 기본 대화상자 닫기까지 막힌다)
+      if (event.target instanceof Element && event.target.closest('dialog')) return;
+      event.preventDefault();
       setOpen(false);
       toggleRef.current?.focus();
     }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
   }, [open]);
 
   return (

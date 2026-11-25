@@ -14,6 +14,7 @@ import { useI18n } from './i18n/I18nProvider';
 import { GenerationCancelledError, generatePuzzle } from './workers/generatePuzzle';
 import { Game } from './ui/Game';
 import { LanguageSelect } from './ui/LanguageSelect';
+import { GuideDialog } from './ui/GuideDialog';
 import { NewGameMenu } from './ui/NewGameMenu';
 
 // 게임 이름은 번역하지 않는다. (ADR-0002)
@@ -36,6 +37,13 @@ function initialPhase(): Phase {
 export function App() {
   const { t } = useI18n();
   const [phase, setPhase] = useState(initialPhase);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guideButtonRef = useRef<HTMLButtonElement>(null);
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false);
+    // 닫으면 연 버튼으로 포커스를 돌려준다.
+    guideButtonRef.current?.focus();
+  }, []);
   // 새 게임을 연달아 요청하면 마지막 요청의 결과만 반영한다.
   const latestRequest = useRef(0);
 
@@ -75,8 +83,23 @@ export function App() {
     <main className="app">
       <header className="app-header">
         <h1>{GAME_NAME}</h1>
-        <LanguageSelect />
+        <div className="header-actions">
+          {/* 좁은 화면에서도 헤더가 한 줄에 들어가도록 기호(?)만 보이고, 이름은 aria-label로 읽힌다. */}
+          <button
+            ref={guideButtonRef}
+            type="button"
+            className="tool icon"
+            aria-label={t('guide.button')}
+            title={t('guide.button')}
+            aria-haspopup="dialog"
+            onClick={() => setGuideOpen(true)}
+          >
+            ?
+          </button>
+          <LanguageSelect />
+        </div>
       </header>
+      <GuideDialog open={guideOpen} onClose={closeGuide} />
 
       <div className="game-bar">
         <p className="meta">

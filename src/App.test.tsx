@@ -179,4 +179,50 @@ describe('App', () => {
     expect(screen.getByText('Solved! Well done.')).toBeTruthy();
     expect(localStorage.getItem(SAVE_KEY)).toBeNull();
   });
+
+  it('도움말을 열고 닫으며, 닫으면 도움말 버튼으로 포커스를 돌려준다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+
+    const help = screen.getByRole('button', { name: 'How to play' });
+    expect(help.getAttribute('aria-haspopup')).toBe('dialog');
+    await user.click(help);
+    const dialog = screen.getByRole('dialog', { name: 'How to play' }) as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(within(dialog).getByText(/exactly once/)).toBeTruthy();
+    expect(within(dialog).getByText('Ctrl/⌘ + Z')).toBeTruthy();
+    // 열면 닫기 버튼에 포커스가 간다.
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Close' }));
+
+    await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(dialog.open).toBe(false);
+    expect(document.activeElement).toBe(help);
+  });
+
+  it('도움말이 열려 있는 동안 누른 숫자 키는 보드에 입력하지 않는다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    const firstEmpty = easy.givens.findIndex((value) => value === 0);
+    await user.click(cells()[firstEmpty]!);
+    await user.click(screen.getByRole('button', { name: 'How to play' }));
+    await user.keyboard('5');
+    expect(cells()[firstEmpty]!.textContent).toBe('');
+  });
+
+  // 실제 Esc 키 동작은 Chrome(CDP)에서 확인했다. 여기서는 close 이벤트 경로만 검증한다.
+  it('대화상자가 버튼 밖의 방법으로 닫혀도(close 이벤트) 상태를 닫힘으로 맞춘다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    const help = screen.getByRole('button', { name: 'How to play' });
+    await user.click(help);
+    const dialog = screen.getByRole('dialog') as HTMLDialogElement;
+    act(() => dialog.close());
+    expect(document.activeElement).toBe(help);
+    // 다시 열 수 있어야 한다. (상태가 열림으로 남아 있으면 버튼을 눌러도 열리지 않는다)
+    await user.click(help);
+    expect(dialog.open).toBe(true);
+  });
 });

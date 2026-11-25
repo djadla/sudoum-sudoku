@@ -78,6 +78,99 @@ button {
   font-size: 22px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool.icon {
+  flex: none;
+  width: 44px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 플레이 가이드 (브라우저 기본 모달 <dialog>) */
+.guide {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
+  border: 1px solid var(--line-thin);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--fg);
+  overflow-y: auto;
+}
+
+.guide::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.guide h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.guide h3 {
+  margin: 20px 0 8px;
+  font-size: 16px;
+}
+
+.guide ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.55;
+}
+
+.guide li + li {
+  margin-top: 4px;
+}
+
+.guide-keys {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.guide-keys div {
+  display: grid;
+  grid-template-columns: minmax(0, 11em) 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.guide-keys dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--line-thin);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 13px;
+}
+
+/* 좁은 화면에서는 단축키와 설명을 위아래로 놓는다. */
+@media (max-width: 420px) {
+  .guide-keys div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
 .language-select {
   display: flex;
   align-items: center;
@@ -284,17 +377,8 @@ button {
   .tool {
     font-size: 14px;
   }
-}
 
-/* 아주 좁은 화면(320px 등): 버튼 글자가 줄바꿈되지 않게 더 줄이고,
-   헤더가 두 줄로 접히지 않도록 언어 선택기의 글자 레이블은 화면 낭독기에만 남긴다. */
-@media (max-width: 360px) {
-  .tool {
-    padding: 6px 4px;
-    font-size: 13px;
-    white-space: nowrap;
-  }
-
+  /* 제목·도움말·언어 선택기가 한 줄에 들어가도록 언어 선택기의 글자 레이블은 화면 낭독기에만 남긴다. */
   .language-select label {
     position: absolute;
     width: 1px;
@@ -302,6 +386,23 @@ button {
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  .guide {
+    padding: 16px;
+  }
+}
+
+/* 아주 좁은 화면(320px 등): 버튼 글자가 줄바꿈되지 않게 더 줄이고, 헤더가 한 줄에 들어가도록 제목을 줄인다. */
+@media (max-width: 360px) {
+  .tool {
+    padding: 6px 4px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .app-header h1 {
+    font-size: 17px;
   }
 }
 

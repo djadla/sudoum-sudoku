@@ -1,5 +1,5 @@
 import { colOf, indexOf, isSolved, peersOf, rowOf } from '../engine/grid';
-import { CELL_COUNT, type Puzzle } from '../engine/puzzle';
+import { CELL_COUNT, type Puzzle } from '../engine/types';
 
 /** 칸별 메모. 숫자 d의 메모는 비트 (1 << d)로 표시한다. 0이면 메모 없음. */
 export type NoteMask = number;
@@ -67,6 +67,16 @@ export function createGame(puzzle: Puzzle): GameState {
     past: [],
     future: [],
   };
+}
+
+/** 저장해 둔 보드·메모로 게임을 다시 시작한다. 실행 취소 기록은 비어 있다. */
+export function restoreGame(
+  puzzle: Puzzle,
+  values: readonly number[],
+  notes: readonly NoteMask[],
+): GameState {
+  const status = isSolved(values, puzzle.solution) ? 'solved' : 'playing';
+  return { ...createGame(puzzle), values: [...values], notes: [...notes], status };
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));

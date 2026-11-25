@@ -9,6 +9,10 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  // 퍼즐 생성 Worker는 `new Worker(url, { type: 'module' })`로 띄우므로 ES 모듈로 빌드한다.
+  worker: {
+    format: 'es',
+  },
   test: {
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },

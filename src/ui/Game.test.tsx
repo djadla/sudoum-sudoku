@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPuzzle } from '../engine/puzzle';
+import { createGame } from '../game/state';
 import { renderWithI18n } from '../test/render';
 import { eventToAction, Game, keyToAction } from './Game';
 
@@ -13,11 +14,11 @@ const answer = puzzle.solution[firstEmpty]!;
 const wrong = (answer % 9) + 1;
 
 function setup() {
-  const onNewPuzzle = vi.fn();
+  const onChange = vi.fn();
   const user = userEvent.setup();
-  renderWithI18n(<Game puzzle={puzzle} onNewPuzzle={onNewPuzzle} />);
+  renderWithI18n(<Game initialState={createGame(puzzle)} onChange={onChange} />);
   const cells = within(screen.getByRole('grid')).getAllByRole('gridcell');
-  return { user, cells, onNewPuzzle };
+  return { user, cells, onChange };
 }
 
 afterEach(cleanup);
@@ -168,15 +169,15 @@ describe('Game', () => {
     expect((screen.getByRole('button', { name: 'Erase' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('새 퍼즐 버튼은 부모에게 알린다', async () => {
-    const { user, onNewPuzzle } = setup();
-    await user.click(screen.getByRole('button', { name: 'New puzzle' }));
-    expect(onNewPuzzle).toHaveBeenCalledOnce();
-  });
-
-  it('보드 위에 난이도·seed를 표시한다', () => {
-    setup();
-    expect(screen.getByText(`Level ${puzzle.difficulty} · Seed ${puzzle.seed}`)).toBeTruthy();
+  it('보드가 바뀔 때만 onChange로 알린다', async () => {
+    const { user, cells, onChange } = setup();
+    expect(onChange).toHaveBeenCalledTimes(1); // 시작 상태
+    await user.click(cells[firstEmpty]!); // 선택만 바뀜
+    await user.keyboard('n'); // 메모 모드만 바뀜
+    expect(onChange).toHaveBeenCalledTimes(1);
+    await user.keyboard('5');
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange.mock.lastCall![0].notes[firstEmpty]).toBe(1 << 5);
   });
 
   it('같은 행에 같은 숫자를 넣으면 두 칸 모두 충돌로 표시하고, 지우면 해제한다', async () => {

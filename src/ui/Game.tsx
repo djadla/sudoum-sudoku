@@ -1,13 +1,14 @@
 import { useEffect, useReducer } from 'react';
-import type { Puzzle } from '../engine/puzzle';
-import { canRedo, canUndo, createGame, gameReducer, type GameAction } from '../game/state';
+import { canRedo, canUndo, gameReducer, type GameAction, type GameState } from '../game/state';
 import { useI18n } from '../i18n/I18nProvider';
 import { Board } from './Board';
 import { Controls } from './Controls';
 
 interface GameProps {
-  readonly puzzle: Puzzle;
-  readonly onNewPuzzle: () => void;
+  /** 시작 상태 (새 게임 또는 저장에서 복원한 게임) */
+  readonly initialState: GameState;
+  /** 보드가 바뀔 때마다 호출한다. (진행 저장용) */
+  readonly onChange?: (state: GameState) => void;
 }
 
 const ARROWS: Record<string, { dRow: number; dCol: number }> = {
@@ -43,16 +44,25 @@ export function eventToAction(event: KeyInput): GameAction | null {
   return keyToAction(event.key);
 }
 
-/** 퍼즐 하나의 플레이 화면. 새 퍼즐은 부모가 key를 바꿔 다시 마운트한다. */
-export function Game({ puzzle, onNewPuzzle }: GameProps) {
+/** 퍼즐 하나의 플레이 화면. 새 게임은 부모가 key를 바꿔 다시 마운트한다. */
+export function Game({ initialState, onChange }: GameProps) {
   const { t } = useI18n();
-  const [state, dispatch] = useReducer(gameReducer, puzzle, createGame);
+  const [state, dispatch] = useReducer(gameReducer, initialState);
   const solved = state.status === 'solved';
+
+  // 선택·메모 모드만 바뀐 경우는 저장할 필요가 없으므로 보드(values·notes)가 바뀔 때만 알린다.
+  // (onChange는 부모가 useCallback으로 고정해 넘긴다)
+  const { values, notes } = state;
+  useEffect(() => {
+    onChange?.(state);
+  }, [values, notes, onChange]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      // 언어 선택기 등 다른 입력 요소에서 누른 키는 가로채지 않는다.
-      if (event.target instanceof Element && event.target.closest('input, select, textarea')) return;
+      // 언어 선택기·새 게임 메뉴 등 다른 입력 요소에서 누른 키는 가로채지 않는다.
+      if (event.target instanceof Element && event.target.closest('input, select, textarea, [data-no-game-keys]')) {
+        return;
+      }
       const action = eventToAction(event);
       if (!action) return;
       event.preventDefault();
@@ -64,14 +74,6 @@ export function Game({ puzzle, onNewPuzzle }: GameProps) {
 
   return (
     <section className="game">
-      {/* 좁은 화면에서도 보드·조작부가 한 화면에 들어가도록 새 퍼즐 버튼을 보드 위 한 줄에 둔다. */}
-      <div className="game-bar">
-        <p className="meta">{t('puzzle.meta', { level: puzzle.difficulty, seed: puzzle.seed })}</p>
-        <button type="button" className="tool compact" onClick={onNewPuzzle}>
-          {t('controls.newPuzzle')}
-        </button>
-      </div>
-
       <Board state={state} onSelect={(index) => dispatch({ type: 'select', index })} />
 
       {solved && (

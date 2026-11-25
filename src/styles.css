@@ -15,6 +15,8 @@
   --success-bg: #e6f4ea;
   --success-fg: #1e6b34;
   --focus: #f59e0b;
+  --conflict-fg: #c81e1e;
+  --conflict-stripe: rgba(200, 30, 30, 0.14);
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans KR', sans-serif;
 }
@@ -36,6 +38,8 @@
     --note-match: #fb923c;
     --success-bg: #183324;
     --success-fg: #86efac;
+    --conflict-fg: #ff7b7b;
+    --conflict-stripe: rgba(255, 123, 123, 0.18);
     color-scheme: dark;
   }
 }
@@ -57,7 +61,7 @@ button {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 16px 16px 24px;
 }
 
 .app-header {
@@ -66,7 +70,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .app-header h1 {
@@ -158,6 +162,21 @@ button {
     inset 0 -2px 0 var(--line-thick);
 }
 
+/* 충돌: 같은 행·열·박스의 같은 숫자. 색만으로 구분하지 않도록 빗금 무늬와 밑줄을 함께 쓴다. */
+.cell[data-conflict] {
+  color: var(--conflict-fg);
+  text-decoration: underline wavy var(--conflict-fg);
+  text-underline-offset: 4px;
+}
+
+.cell[data-conflict]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(135deg, var(--conflict-stripe) 0 3px, transparent 3px 7px);
+  pointer-events: none;
+}
+
 /* 메모: 칸 안의 3×3 작은 숫자 */
 .notes {
   display: grid;
@@ -199,7 +218,7 @@ button {
 
 /* 조작 */
 .controls {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .tools {
@@ -210,13 +229,19 @@ button {
 
 .tool {
   flex: 1;
+  min-width: 0;
   min-height: 44px;
-  padding: 8px 12px;
+  padding: 6px 8px;
   border: 1px solid var(--line-thin);
   border-radius: 8px;
   background: var(--surface);
   color: var(--fg);
   cursor: pointer;
+}
+
+.tool.compact {
+  flex: none;
+  padding: 6px 14px;
 }
 
 .tool[aria-pressed='true'] {
@@ -237,7 +262,7 @@ button {
 }
 
 .digit {
-  min-height: 48px;
+  min-height: 44px;
   padding: 0;
   border: 1px solid var(--line-thin);
   border-radius: 8px;
@@ -253,6 +278,30 @@ button {
 @media (max-width: 420px) {
   .number-pad {
     grid-template-columns: repeat(5, 1fr);
+  }
+
+  /* 도구 버튼 4개가 한 줄에 들어가도록 글자를 줄인다. */
+  .tool {
+    font-size: 14px;
+  }
+}
+
+/* 아주 좁은 화면(320px 등): 버튼 글자가 줄바꿈되지 않게 더 줄이고,
+   헤더가 두 줄로 접히지 않도록 언어 선택기의 글자 레이블은 화면 낭독기에만 남긴다. */
+@media (max-width: 360px) {
+  .tool {
+    padding: 6px 4px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .language-select label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
@@ -273,11 +322,12 @@ button:disabled {
   cursor: default;
 }
 
-.game-footer {
+.game-bar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: 16px;
+  margin-bottom: 8px;
 }
 
 .hint-keys,
@@ -285,11 +335,11 @@ button:disabled {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
-  text-align: center;
 }
 
-.meta {
+.hint-keys {
   margin-top: 12px;
+  text-align: center;
 }
 
 @media (hover: hover) {

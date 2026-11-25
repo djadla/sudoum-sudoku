@@ -1,4 +1,4 @@
-import { CELL_COUNT, type Grid } from './puzzle';
+import { CELL_COUNT, type Grid } from './types';
 
 export const rowOf = (index: number): number => Math.floor(index / 9);
 export const colOf = (index: number): number => index % 9;

@@ -26,14 +26,29 @@ const ko = {
     notes: '메모',
     on: '켬',
     off: '끔',
-    newPuzzle: '새 퍼즐',
     keyboardHint: '키보드: 1–9 입력 · N 메모 · Backspace 지우기 · 방향키 이동 · Ctrl/⌘+Z 실행 취소 · Ctrl/⌘+Shift+Z 다시 하기',
+  },
+  newGame: {
+    button: '새 게임',
+    title: '난이도 선택',
+    current: '현재',
+    cancel: '취소',
+  },
+  difficulty: {
+    easy: '쉬움',
+    medium: '보통',
+    hard: '어려움',
+    expert: '전문가',
+    master: '마스터',
   },
   status: {
     solved: '완성했습니다! 잘하셨어요.',
+    generating: '퍼즐을 만드는 중입니다 ({difficulty})…',
+    failed: '퍼즐을 만들지 못했습니다.',
+    retry: '다시 시도',
   },
   puzzle: {
-    meta: '난이도 {level} · 시드 {seed}',
+    meta: '{difficulty} · 시드 {seed}',
   },
 } satisfies Messages;
 

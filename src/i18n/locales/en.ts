@@ -26,14 +26,29 @@ const en = {
     notes: 'Notes',
     on: 'On',
     off: 'Off',
-    newPuzzle: 'New puzzle',
     keyboardHint: 'Keyboard: 1–9 enter · N notes · Backspace erase · arrows move · Ctrl/⌘+Z undo · Ctrl/⌘+Shift+Z redo',
+  },
+  newGame: {
+    button: 'New game',
+    title: 'Choose difficulty',
+    current: 'current',
+    cancel: 'Cancel',
+  },
+  difficulty: {
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+    expert: 'Expert',
+    master: 'Master',
   },
   status: {
     solved: 'Solved! Well done.',
+    generating: 'Creating a puzzle ({difficulty})…',
+    failed: 'Could not create a puzzle.',
+    retry: 'Try again',
   },
   puzzle: {
-    meta: 'Level {level} · Seed {seed}',
+    meta: '{difficulty} · Seed {seed}',
   },
 } as const;
 

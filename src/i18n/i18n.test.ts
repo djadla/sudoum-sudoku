@@ -70,7 +70,7 @@ describe('translate', () => {
   });
 
   it('넘기지 않은 파라미터는 그대로 남긴다', () => {
-    expect(translate(en, 'puzzle.meta', { level: 'L1' })).toBe('Level L1 · Seed {seed}');
+    expect(translate(en, 'puzzle.meta', { difficulty: 'Easy' })).toBe('Easy · Seed {seed}');
   });
 });
 

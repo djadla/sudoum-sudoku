@@ -50,6 +50,7 @@ docs/
 ### 의존 규칙
 
 - 의존 방향: `ui → game → engine`. `engine`은 React·DOM·브라우저 저장소에 의존하지 않는다.
+- 퍼즐 생성(`sudoku-core`)은 `src/workers/`를 거쳐 Web Worker에서 한다. `ui`·`game`은 `engine/puzzle.ts`를 직접 import하지 않고 타입·상수는 `engine/types.ts`에서 가져온다. (메인 번들에 생성 코드가 들어가 화면이 멈추거나 번들이 커지는 것을 막기 위해서다)
 - 서버·런타임 백엔드 의존을 추가하지 않는다.
 - 정적 자원 경로는 하드코딩하지 않고 Vite의 `base`(`/sudoum-sudoku/`)와 `import.meta.env.BASE_URL`을 따른다.
 - 외부 코드를 복사하거나 패키지를 추가할 때는 라이선스 호환성(MIT 등)을 확인하고 사용자에게 알린다.

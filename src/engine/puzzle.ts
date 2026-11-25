@@ -1,18 +1,7 @@
 import { generate, getUniqueSolution, type Difficulty } from 'sudoku-core';
+import type { Puzzle } from './types';
 
-/** 81칸 보드. 0은 빈칸, 1~9는 숫자. 행 우선(row-major) 순서. */
-export type Grid = readonly number[];
-
-export interface Puzzle {
-  /** 처음부터 주어진 숫자(빈칸은 0) */
-  readonly givens: Grid;
-  /** 유일한 정답 */
-  readonly solution: Grid;
-  readonly difficulty: Difficulty;
-  readonly seed: number;
-}
-
-export const CELL_COUNT = 81;
+export { CELL_COUNT, type Grid, type Puzzle } from './types';
 
 /**
  * 해가 정확히 하나인 퍼즐을 만든다.
@@ -31,9 +20,4 @@ export function createPuzzle(difficulty: Difficulty, seed: number): Puzzle {
     difficulty,
     seed,
   };
-}
-
-/** 무작위 seed. 공유·재현에 쓰므로 32비트 양의 정수로 제한한다. */
-export function randomSeed(): number {
-  return Math.floor(Math.random() * 0x7fffffff) + 1;
 }

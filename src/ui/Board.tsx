@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { colOf, isPeer, rowOf } from '../engine/grid';
+import { useEffect, useMemo, useRef } from 'react';
+import { colOf, findConflicts, isPeer, rowOf } from '../engine/grid';
 import { hasNote, isGiven, noteDigits, type GameState } from '../game/state';
 import { useI18n } from '../i18n/I18nProvider';
 
@@ -17,6 +17,8 @@ export function Board({ state, onSelect }: BoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const { selected, values, notes } = state;
   const selectedValue = selected === null ? 0 : values[selected]!;
+  // 같은 행·열·박스에 같은 숫자가 겹친 칸 (주어진 숫자도 포함해 양쪽 모두 표시한다)
+  const conflicts = useMemo(() => findConflicts(values), [values]);
 
   // 키보드로 선택을 옮겼을 때, 포커스가 보드 안에 있으면 포커스도 따라가게 한다.
   // (숫자 패드 버튼 등 보드 밖의 포커스는 빼앗지 않는다)
@@ -29,8 +31,12 @@ export function Board({ state, onSelect }: BoardProps) {
   function cellLabel(index: number): string {
     const position = { row: rowOf(index) + 1, col: colOf(index) + 1 };
     const value = values[index]!;
-    if (isGiven(state, index)) return t('board.cellGiven', { ...position, value });
-    if (value !== 0) return t('board.cellFilled', { ...position, value });
+    const label = isGiven(state, index)
+      ? t('board.cellGiven', { ...position, value })
+      : value !== 0
+        ? t('board.cellFilled', { ...position, value })
+        : null;
+    if (label !== null) return conflicts[index] ? t('board.withDuplicate', { label }) : label;
     const marks = noteDigits(notes[index]!);
     if (marks.length > 0) return t('board.cellNotes', { ...position, notes: marks.join(', ') });
     return t('board.cellEmpty', position);
@@ -60,6 +66,7 @@ export function Board({ state, onSelect }: BoardProps) {
                 data-selected={isSelected || undefined}
                 data-peer={(selected !== null && isPeer(selected, index)) || undefined}
                 data-same={(selectedValue !== 0 && value === selectedValue && !isSelected) || undefined}
+                data-conflict={conflicts[index] || undefined}
                 aria-selected={isSelected}
                 aria-label={cellLabel(index)}
                 tabIndex={tabbable ? 0 : -1}

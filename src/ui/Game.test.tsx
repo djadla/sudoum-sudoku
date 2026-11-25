@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPuzzle } from '../engine/puzzle';
 import { renderWithI18n } from '../test/render';
-import { Game, keyToAction } from './Game';
+import { eventToAction, Game, keyToAction } from './Game';
 
 const puzzle = createPuzzle('L1', 12345);
 const firstEmpty = puzzle.givens.findIndex((value) => value === 0);
@@ -36,6 +36,30 @@ describe('keyToAction', () => {
     ['Enter', null],
   ])('%s', (key, expected) => {
     expect(keyToAction(key)).toEqual(expected);
+  });
+});
+
+describe('eventToAction', () => {
+  const key = (k: string, mods: Partial<Record<'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey', boolean>> = {}) => ({
+    key: k,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    altKey: false,
+    ...mods,
+  });
+
+  it.each([
+    [key('z', { ctrlKey: true }), { type: 'undo' }],
+    [key('z', { metaKey: true }), { type: 'undo' }],
+    [key('Z', { metaKey: true, shiftKey: true }), { type: 'redo' }],
+    [key('y', { ctrlKey: true }), { type: 'redo' }],
+    [key('c', { ctrlKey: true }), null],
+    [key('5', { ctrlKey: true }), null],
+    [key('5', { altKey: true }), null],
+    [key('5'), { type: 'input', digit: 5 }],
+  ])('%o', (input, expected) => {
+    expect(eventToAction(input)).toEqual(expected);
   });
 });
 
@@ -148,5 +172,60 @@ describe('Game', () => {
     const { user, onNewPuzzle } = setup();
     await user.click(screen.getByRole('button', { name: 'New puzzle' }));
     expect(onNewPuzzle).toHaveBeenCalledOnce();
+  });
+
+  it('보드 위에 난이도·seed를 표시한다', () => {
+    setup();
+    expect(screen.getByText(`Level ${puzzle.difficulty} · Seed ${puzzle.seed}`)).toBeTruthy();
+  });
+
+  it('같은 행에 같은 숫자를 넣으면 두 칸 모두 충돌로 표시하고, 지우면 해제한다', async () => {
+    const { user, cells } = setup();
+    // 첫 빈칸과 같은 행에 있는 주어진 숫자 하나를 골라 같은 숫자를 넣는다.
+    const row = Math.floor(firstEmpty / 9);
+    const givenInRow = puzzle.givens.findIndex((value, index) => value !== 0 && Math.floor(index / 9) === row);
+    const digit = puzzle.givens[givenInRow]!;
+
+    await user.click(cells[firstEmpty]!);
+    await user.keyboard(String(digit));
+    expect(cells[firstEmpty]!.hasAttribute('data-conflict')).toBe(true);
+    expect(cells[givenInRow]!.hasAttribute('data-conflict')).toBe(true);
+    expect(cells[firstEmpty]!.getAttribute('aria-label')).toMatch(/, duplicate$/);
+    expect(cells[givenInRow]!.getAttribute('aria-label')).toMatch(/given, duplicate$/);
+
+    await user.keyboard('{Backspace}');
+    expect(cells[firstEmpty]!.hasAttribute('data-conflict')).toBe(false);
+    expect(cells[givenInRow]!.hasAttribute('data-conflict')).toBe(false);
+  });
+
+  it('정답 숫자는 충돌로 표시하지 않는다', async () => {
+    const { user, cells } = setup();
+    await user.click(cells[firstEmpty]!);
+    await user.keyboard(String(answer));
+    expect(cells.some((cell) => cell.hasAttribute('data-conflict'))).toBe(false);
+  });
+
+  it('실행 취소·다시 하기 버튼과 단축키로 입력을 되돌린다', async () => {
+    const { user, cells } = setup();
+    const undo = screen.getByRole('button', { name: 'Undo' }) as HTMLButtonElement;
+    const redo = screen.getByRole('button', { name: 'Redo' }) as HTMLButtonElement;
+    expect(undo.disabled).toBe(true);
+    expect(redo.disabled).toBe(true);
+
+    await user.click(cells[firstEmpty]!);
+    await user.keyboard(String(wrong));
+    expect(undo.disabled).toBe(false);
+
+    await user.click(undo);
+    expect(cells[firstEmpty]!.textContent).toBe('');
+    expect(redo.disabled).toBe(false);
+
+    await user.click(redo);
+    expect(cells[firstEmpty]!.textContent).toBe(String(wrong));
+
+    await user.keyboard('{Control>}z{/Control}');
+    expect(cells[firstEmpty]!.textContent).toBe('');
+    await user.keyboard('{Meta>}{Shift>}z{/Shift}{/Meta}');
+    expect(cells[firstEmpty]!.textContent).toBe(String(wrong));
   });
 });

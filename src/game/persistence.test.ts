@@ -104,7 +104,9 @@ describe('parseSavedGame', () => {
 
 describe('저장 형식 버전', () => {
   it('남은 힌트 횟수를 저장하고 읽는다', () => {
-    const hard = createPuzzle('L6', 31);
+    // 어려움 퍼즐을 실제로 만들면 수 초가 걸리므로(CI에서 시간 초과) 쉬운 퍼즐에 레벨만 바꿔 쓴다.
+    // 저장 검증은 난이도와 레벨이 맞는지만 보며, 퍼즐 내용은 그대로 유효하다.
+    const hard = { ...puzzle, difficulty: 'L6' as const };
     const state = gameReducer(createGame(hard, 3), { type: 'useHint' });
     const parsed = parseSavedGame(roundTrip(toSavedGame('hard', state)))!;
     expect(parsed.version).toBe(2);

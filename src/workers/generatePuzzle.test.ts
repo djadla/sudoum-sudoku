@@ -1,5 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createPuzzle } from '../engine/puzzle';
+
+// 잘못된 레벨을 넣으면 sudoku-core는 제한 시간까지 생성을 시도해 수 초가 걸린다. (CI 시간 초과 원인)
+// 실패 처리만 확인하면 되므로, 이 레벨에서는 바로 실패하도록 바꾼다.
+const FAILING_LEVEL = 'L99' as never;
+vi.mock('../engine/puzzle', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../engine/puzzle')>();
+  return {
+    ...actual,
+    createPuzzle: (level: Parameters<typeof actual.createPuzzle>[0], seed: number) => {
+      if (level === FAILING_LEVEL) throw new Error('생성 실패 (테스트)');
+      return actual.createPuzzle(level, seed);
+    },
+  };
+});
 import { generatePuzzle } from './generatePuzzle';
 import { handleGenerate } from './handlers';
 
@@ -10,7 +24,7 @@ describe('handleGenerate', () => {
   });
 
   it('생성에 실패하면 오류를 돌려준다', () => {
-    const response = handleGenerate({ type: 'generate', id: 8, level: 'L99' as never, seed: 1 });
+    const response = handleGenerate({ type: 'generate', id: 8, level: FAILING_LEVEL, seed: 1 });
     expect(response.ok).toBe(false);
     expect(response.id).toBe(8);
   });
@@ -23,7 +37,7 @@ describe('generatePuzzle (Worker가 없는 환경)', () => {
   });
 
   it('생성에 실패하면 거부한다', async () => {
-    await expect(generatePuzzle('L99' as never, 1)).rejects.toThrow();
+    await expect(generatePuzzle(FAILING_LEVEL, 1)).rejects.toThrow('생성 실패');
   });
 });
 

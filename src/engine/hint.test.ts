@@ -110,5 +110,6 @@ describe('computeHint', () => {
 
     expect(values).toEqual(puzzle.solution);
     expect(tactics.size).toBeGreaterThan(0);
-  });
+    // L6 퍼즐 생성은 느린 러너에서 수 초가 걸릴 수 있어 제한 시간을 넉넉히 둔다.
+  }, 30_000);
 });

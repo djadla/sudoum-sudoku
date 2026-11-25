@@ -22,8 +22,9 @@ function flatten(tree: MessageTree, prefix = '', entries = new Map<string, strin
   return entries;
 }
 
+/** 메시지에 쓰인 {파라미터} 이름의 집합. 같은 파라미터를 몇 번 쓰는지는 언어마다 다를 수 있다. */
 function paramNames(text: string): string[] {
-  return [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!).sort();
+  return [...new Set([...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!))].sort();
 }
 
 describe('언어 리소스', () => {

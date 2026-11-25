@@ -1,10 +1,11 @@
 /// <reference lib="webworker" />
-// 퍼즐 생성 Worker. 높은 난이도는 생성에 수 초가 걸릴 수 있어 메인 스레드(화면)를 막지 않도록 분리한다.
-import { handleGenerate } from './handleGenerate';
-import type { GenerateRequest } from './protocol';
+// 퍼즐 생성·힌트 계산 Worker. sudoku-core 계산이 화면(메인 스레드)을 막지 않도록 분리한다.
+import { handleGenerate, handleHint } from './handlers';
+import type { WorkerRequest } from './protocol';
 
 declare const self: DedicatedWorkerGlobalScope;
 
-self.addEventListener('message', (event: MessageEvent<GenerateRequest>) => {
-  self.postMessage(handleGenerate(event.data));
+self.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
+  const request = event.data;
+  self.postMessage(request.type === 'hint' ? handleHint(request) : handleGenerate(request));
 });

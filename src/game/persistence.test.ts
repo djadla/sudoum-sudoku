@@ -79,7 +79,11 @@ describe('parseSavedGame', () => {
   it.each<[string, unknown]>([
     ['null', null],
     ['배열', []],
-    ['버전이 다름', mutate((raw) => (raw.version = 2))],
+    ['모르는 버전', mutate((raw) => (raw.version = 3))],
+    ['남은 힌트가 음수', mutate((raw) => (raw.hintsLeft = -1))],
+    ['남은 힌트가 난이도 허용치보다 많음', mutate((raw) => (raw.hintsLeft = 1))],
+    ['남은 힌트가 정수가 아님', mutate((raw) => (raw.hintsLeft = 0.5))],
+    ['버전 2인데 남은 힌트가 없음', mutate((raw) => delete raw.hintsLeft)],
     ['모르는 난이도', mutate((raw) => (raw.difficulty = 'insane'))],
     ['난이도와 레벨이 맞지 않음', mutate((raw) => (raw.difficulty = 'hard'))],
     ['칸 수가 다름', mutate((raw) => raw.values.pop())],
@@ -95,6 +99,27 @@ describe('parseSavedGame', () => {
     ['정답의 같은 행 두 칸을 맞바꿈(열·박스 위반)', mutate((raw) => swapEmptyInRow(raw.puzzle.solution))],
   ])('잘못된 저장은 버린다: %s', (_, raw) => {
     expect(parseSavedGame(raw)).toBeNull();
+  });
+});
+
+describe('저장 형식 버전', () => {
+  it('남은 힌트 횟수를 저장하고 읽는다', () => {
+    const hard = createPuzzle('L6', 31);
+    const state = gameReducer(createGame(hard, 3), { type: 'useHint' });
+    const parsed = parseSavedGame(roundTrip(toSavedGame('hard', state)))!;
+    expect(parsed.version).toBe(2);
+    expect(parsed.hintsLeft).toBe(2);
+  });
+
+  it('버전 1 저장(M2b)은 남은 힌트를 그 난이도의 전체 횟수로 채워 읽는다', () => {
+    const raw = mutate((r) => {
+      r.version = 1;
+      delete r.hintsLeft;
+    });
+    const parsed = parseSavedGame(raw)!;
+    expect(parsed).not.toBeNull();
+    expect(parsed.version).toBe(2);
+    expect(parsed.hintsLeft).toBe(0); // 쉬움은 0회
   });
 });
 

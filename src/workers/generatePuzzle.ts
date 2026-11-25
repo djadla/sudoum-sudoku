@@ -21,7 +21,7 @@ function settle(response: GenerateResponse, resolve: (puzzle: Puzzle) => void, r
 
 /** Worker를 쓸 수 없는 환경(테스트, 오래된 브라우저)에서는 다음 틱에 같은 스레드에서 만든다. */
 async function generateInline(request: GenerateRequest): Promise<Puzzle> {
-  const { handleGenerate } = await import('./handleGenerate');
+  const { handleGenerate } = await import('./handlers');
   return new Promise((resolve, reject) => setTimeout(() => settle(handleGenerate(request), resolve, reject)));
 }
 
@@ -31,7 +31,7 @@ async function generateInline(request: GenerateRequest): Promise<Puzzle> {
  * 이전 요청은 GenerationCancelledError로 끝낸다.
  */
 export function generatePuzzle(level: PuzzleLevel, seed: number): Promise<Puzzle> {
-  const request: GenerateRequest = { id: nextId++, level, seed };
+  const request: GenerateRequest = { type: 'generate', id: nextId++, level, seed };
 
   if (pending) {
     pending.reject(new GenerationCancelledError());

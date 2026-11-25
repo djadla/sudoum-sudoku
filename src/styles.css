@@ -17,6 +17,12 @@
   --focus: #f59e0b;
   --conflict-fg: #c81e1e;
   --conflict-stripe: rgba(200, 30, 30, 0.14);
+  --hint-region-bg: #eef8f1;
+  --hint-pattern-bg: #cdebd7;
+  --hint-pattern-fg: #157a3a;
+  --hint-region: #3aa365;
+  --hint-eliminate: #c81e1e;
+  --hint-focus: #e8a400;
   color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans KR', sans-serif;
 }
@@ -40,6 +46,12 @@
     --success-fg: #86efac;
     --conflict-fg: #ff7b7b;
     --conflict-stripe: rgba(255, 123, 123, 0.18);
+    --hint-region-bg: #1f2a24;
+    --hint-pattern-bg: #23452f;
+    --hint-pattern-fg: #7ee2a2;
+    --hint-region: #4cc27e;
+    --hint-eliminate: #ff7b7b;
+    --hint-focus: #ffc94d;
     color-scheme: dark;
   }
 }
@@ -268,6 +280,103 @@ kbd {
   inset: 0;
   background: repeating-linear-gradient(135deg, var(--conflict-stripe) 0 3px, transparent 3px 7px);
   pointer-events: none;
+}
+
+/* 힌트 강조: 근거 단위(테두리), 패턴 칸(초록 배경), 대상 칸(굵은 테두리), 지울 후보(빨간 취소선).
+   색만으로 구분하지 않도록 테두리 굵기·취소선·밑줄을 함께 쓴다. */
+.board[data-hinting] .cell[data-hint-region] {
+  background: var(--hint-region-bg);
+}
+
+.cell[data-hint-pattern] {
+  background: var(--hint-pattern-bg);
+  outline: 2px solid var(--hint-region);
+  outline-offset: -2px;
+}
+
+.cell[data-hint-focus] {
+  outline: 3px solid var(--hint-focus);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.cell[data-hint-wrong] {
+  color: var(--conflict-fg);
+  text-decoration: line-through 2px var(--conflict-fg);
+}
+
+.notes[data-preview] {
+  opacity: 0.55;
+}
+
+.notes span[data-eliminate] {
+  color: var(--hint-eliminate);
+  font-weight: 700;
+  text-decoration: line-through 2px var(--hint-eliminate);
+}
+
+.notes span[data-pattern] {
+  color: var(--hint-pattern-fg);
+  font-weight: 700;
+  text-decoration: underline 2px var(--hint-pattern-fg);
+}
+
+.notes span[data-add] {
+  color: var(--hint-pattern-fg);
+  font-weight: 700;
+  text-decoration: underline 2px var(--hint-pattern-fg);
+}
+
+/* 힌트 설명: 숫자 패드 자리에 대신 보여 준다. */
+.hint-panel {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-thin);
+  border-left: 4px solid var(--hint-region);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.hint-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.hint-body,
+.hint-removals {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.hint-removals {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hint-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tool.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.game-bar .meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.hint-slot {
+  display: contents;
+}
+
+.hint-button {
+  white-space: nowrap;
 }
 
 /* 메모: 칸 안의 3×3 작은 숫자 */

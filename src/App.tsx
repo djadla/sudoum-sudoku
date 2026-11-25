@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DEFAULT_DIFFICULTY, levelOf, type DifficultyId } from './engine/difficulty';
+import { DEFAULT_DIFFICULTY, HINT_ALLOWANCE, levelOf, type DifficultyId } from './engine/difficulty';
 import { randomSeed } from './engine/seed';
 import {
   clearSavedGame,
@@ -29,7 +29,11 @@ type Phase =
 function initialPhase(): Phase {
   const saved = loadSavedGame();
   if (saved) {
-    return { kind: 'ready', difficulty: saved.difficulty, game: restoreGame(saved.puzzle, saved.values, saved.notes) };
+    return {
+      kind: 'ready',
+      difficulty: saved.difficulty,
+      game: restoreGame(saved.puzzle, saved.values, saved.notes, saved.hintsLeft),
+    };
   }
   return { kind: 'loading', difficulty: loadDifficulty() ?? DEFAULT_DIFFICULTY };
 }
@@ -38,6 +42,8 @@ export function App() {
   const { t } = useI18n();
   const [phase, setPhase] = useState(initialPhase);
   const [guideOpen, setGuideOpen] = useState(false);
+  // 힌트 버튼을 넣을 자리 (Game이 portal로 채운다)
+  const [hintSlot, setHintSlot] = useState<HTMLDivElement | null>(null);
   const guideButtonRef = useRef<HTMLButtonElement>(null);
   const closeGuide = useCallback(() => {
     setGuideOpen(false);
@@ -54,7 +60,8 @@ export function App() {
     setPhase({ kind: 'loading', difficulty });
     generatePuzzle(levelOf(difficulty), randomSeed()).then(
       (puzzle) => {
-        if (request === latestRequest.current) setPhase({ kind: 'ready', difficulty, game: createGame(puzzle) });
+        if (request !== latestRequest.current) return;
+        setPhase({ kind: 'ready', difficulty, game: createGame(puzzle, HINT_ALLOWANCE[difficulty]) });
       },
       (error: unknown) => {
         if (error instanceof GenerationCancelledError || request !== latestRequest.current) return;
@@ -79,6 +86,16 @@ export function App() {
     [difficulty],
   );
 
+  const meta = (
+    <p className="meta">
+      {phase.kind === 'ready'
+        ? t('puzzle.meta', { difficulty: t(`difficulty.${difficulty}`), seed: phase.game.puzzle.seed })
+        : t(`difficulty.${difficulty}`)}
+    </p>
+  );
+  // 막대는 단계가 바뀌어도 같은 자리에 그려, 새 게임 메뉴가 다시 마운트되지 않게 한다.
+  const newGameMenu = <NewGameMenu current={difficulty} onNewGame={startNewGame} />;
+
   return (
     <main className="app">
       <header className="app-header">
@@ -102,12 +119,9 @@ export function App() {
       <GuideDialog open={guideOpen} onClose={closeGuide} />
 
       <div className="game-bar">
-        <p className="meta">
-          {phase.kind === 'ready'
-            ? t('puzzle.meta', { difficulty: t(`difficulty.${difficulty}`), seed: phase.game.puzzle.seed })
-            : t(`difficulty.${difficulty}`)}
-        </p>
-        <NewGameMenu current={difficulty} onNewGame={startNewGame} />
+        {meta}
+        <div ref={setHintSlot} className="hint-slot" />
+        {newGameMenu}
       </div>
 
       {phase.kind === 'ready' ? (
@@ -115,6 +129,7 @@ export function App() {
           key={`${difficulty}:${phase.game.puzzle.seed}`}
           initialState={phase.game}
           onChange={onGameChange}
+          hintSlot={hintSlot}
         />
       ) : (
         <div className="board-placeholder" role="status">

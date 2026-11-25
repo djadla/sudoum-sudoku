@@ -1,3 +1,4 @@
+import type { House } from './hintTypes';
 import { CELL_COUNT, type Grid } from './types';
 
 export const rowOf = (index: number): number => Math.floor(index / 9);
@@ -59,4 +60,14 @@ export function findConflicts(values: Grid): boolean[] {
 /** 모든 칸이 정답과 같으면 완성이다. 퍼즐의 해가 유일하므로 정답 비교로 충분하다. */
 export function isSolved(values: Grid, solution: Grid): boolean {
   return values.every((value, index) => value === solution[index]);
+}
+
+/** 칸들이 모두 같은 행·열·박스 하나에 들어 있으면 그 단위를 돌려준다. (행 → 열 → 박스 순으로 찾는다) */
+export function commonHouse(cells: readonly number[]): House | null {
+  if (cells.length === 0) return null;
+  const [first] = cells as [number, ...number[]];
+  if (cells.every((cell) => rowOf(cell) === rowOf(first))) return { kind: 'row', index: rowOf(first) };
+  if (cells.every((cell) => colOf(cell) === colOf(first))) return { kind: 'column', index: colOf(first) };
+  if (cells.every((cell) => boxOf(cell) === boxOf(first))) return { kind: 'box', index: boxOf(first) };
+  return null;
 }

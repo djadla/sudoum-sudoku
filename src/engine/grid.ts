@@ -71,3 +71,17 @@ export function commonHouse(cells: readonly number[]): House | null {
   if (cells.every((cell) => boxOf(cell) === boxOf(first))) return { kind: 'box', index: boxOf(first) };
   return null;
 }
+
+/**
+ * 빈칸마다 같은 행·열·박스에 아직 없는 숫자(후보)를 비트 마스크로 돌려준다. 숫자 d는 비트 (1 << d).
+ * 숫자가 있는 칸은 0이다. 규칙만으로 계산하는 기본 후보이며, 풀이 기법으로 더 좁히지는 않는다.
+ */
+export function candidateMasks(values: Grid): number[] {
+  const ALL = 0b11_1111_1110;
+  return values.map((value, index) => {
+    if (value !== 0) return 0;
+    let used = 0;
+    for (const peer of peersOf(index)) used |= 1 << values[peer]!;
+    return ALL & ~used;
+  });
+}

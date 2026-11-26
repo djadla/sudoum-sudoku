@@ -31,6 +31,8 @@ describe('keyToAction', () => {
     ['Delete', { type: 'erase' }],
     ['n', { type: 'toggleNoteMode' }],
     ['N', { type: 'toggleNoteMode' }],
+    ['c', { type: 'toggleCandidates' }],
+    ['C', { type: 'toggleCandidates' }],
     ['ArrowUp', { type: 'move', dRow: -1, dCol: 0 }],
     ['ArrowRight', { type: 'move', dRow: 0, dCol: 1 }],
     ['a', null],
@@ -228,5 +230,49 @@ describe('Game', () => {
     expect(cells[firstEmpty]!.textContent).toBe('');
     await user.keyboard('{Meta>}{Shift>}z{/Shift}{/Meta}');
     expect(cells[firstEmpty]!.textContent).toBe(String(wrong));
+  });
+
+  it('후보 보기를 켜면 메모가 없는 빈칸에 후보를 흐리게 보여 주고, 숫자를 넣으면 다시 계산한다', async () => {
+    const { user, cells } = setup();
+    const toggle = screen.getByRole('button', { name: /Candidates/ });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(cells[firstEmpty]!.querySelector('.notes')).toBeNull();
+
+    await user.keyboard('c');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    const notes = cells[firstEmpty]!.querySelector('.notes')!;
+    expect(notes.hasAttribute('data-auto')).toBe(true);
+    expect(notes.textContent).toContain(String(answer));
+    expect(cells[firstEmpty]!.getAttribute('aria-label')).toMatch(/candidates .*\d$/);
+
+    // 같은 행의 다른 빈칸에 정답을 넣으면, 그 숫자는 이 칸의 후보에서 빠진다.
+    const row = Math.floor(firstEmpty / 9);
+    const other = puzzle.givens.findIndex((v, i) => v === 0 && i !== firstEmpty && Math.floor(i / 9) === row);
+    if (other >= 0) {
+      const digit = puzzle.solution[other]!;
+      await user.click(cells[other]!);
+      await user.keyboard(String(digit));
+      expect(cells[firstEmpty]!.querySelector('.notes')!.textContent).not.toContain(String(digit));
+    }
+  });
+
+  it('직접 적은 메모가 있는 칸은 후보 대신 메모를 보여 주고, 메모는 바뀌지 않는다', async () => {
+    const { user, cells } = setup();
+    await user.click(cells[firstEmpty]!);
+    await user.keyboard('n4n'); // 메모 4
+    await user.keyboard('c');
+    const notes = cells[firstEmpty]!.querySelector('.notes')!;
+    expect(notes.hasAttribute('data-auto')).toBe(false);
+    expect(notes.textContent).toBe('4');
+    expect(cells[firstEmpty]!.getAttribute('aria-label')).toMatch(/notes 4$/);
+  });
+
+  it('후보 버튼의 낭독 이름에 화면에 보이는 이름이 들어 있다 (WCAG 2.5.3)', () => {
+    setup();
+    const button = screen.getByRole('button', { name: /Cand/ });
+    // happy-dom은 미디어 쿼리를 적용하지 않으므로, 두 이름이 모두 일반 텍스트로 접근 이름에 들어가는지 확인한다.
+    // (좁은 화면에서는 CSS가 긴 이름을 display: none으로 빼서 접근 이름이 "Cands Off"가 된다)
+    expect(button.querySelector('.label-narrow')!.getAttribute('aria-hidden')).toBeNull();
+    expect(button.textContent).toContain('Cands');
   });
 });

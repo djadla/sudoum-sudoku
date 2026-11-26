@@ -15,6 +15,8 @@ import type { GameState, NoteMask } from './state';
  */
 export const SAVE_KEY = 'sudoum.game';
 export const DIFFICULTY_KEY = 'sudoum.difficulty';
+/** 후보 숫자 자동 표시 켬/끔. 게임 저장과 별개인 사용자 설정이다. */
+export const CANDIDATES_KEY = 'sudoum.showCandidates';
 export const SAVE_VERSION = 2;
 
 export interface SavedGame {
@@ -132,4 +134,12 @@ export function loadDifficulty(): DifficultyId | null {
 
 export function saveDifficulty(difficulty: DifficultyId): void {
   write(DIFFICULTY_KEY, difficulty);
+}
+
+export function loadShowCandidates(): boolean {
+  return read(CANDIDATES_KEY) === 'true';
+}
+
+export function saveShowCandidates(show: boolean): void {
+  write(CANDIDATES_KEY, show ? 'true' : null);
 }

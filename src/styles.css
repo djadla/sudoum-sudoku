@@ -73,7 +73,7 @@ button {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 16px 24px;
+  padding: 12px 16px 24px;
 }
 
 .app-header {
@@ -82,7 +82,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .app-header h1 {
@@ -98,7 +98,8 @@ button {
 
 .tool.icon {
   flex: none;
-  width: 44px;
+  width: 36px;
+  min-height: 36px;
   padding: 0;
   font-size: 18px;
   font-weight: 700;
@@ -197,13 +198,17 @@ kbd {
   background: var(--surface);
   border: 1px solid var(--line-thin);
   border-radius: 6px;
+  min-height: 36px;
   padding: 4px 8px;
 }
 
 /* 보드 */
 .board {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  /* 행·열 모두 9등분으로 고정한다. 행 높이를 정하지 않으면 칸 내용에 따라 달라져,
+     모두 빈 행은 납작해지고(iOS Safari에서 13px 안팎) 메모를 넣은 행은 커져 선이 움직인다. */
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
   aspect-ratio: 1;
   border: 2px solid var(--line-thick);
   background: var(--line-thin);
@@ -222,6 +227,8 @@ kbd {
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background: var(--surface);
   color: var(--entered);
   font-size: clamp(18px, 6vw, 28px);
@@ -382,7 +389,8 @@ kbd {
 /* 메모: 칸 안의 3×3 작은 숫자 */
 .notes {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
   width: 100%;
   height: 100%;
   padding: 2px;
@@ -443,7 +451,10 @@ kbd {
 
 .tool.compact {
   flex: none;
-  padding: 6px 14px;
+  /* 헤더·보드 위 막대의 버튼은 자주 누르지 않으므로 낮게(36px) 두어 상단 영역을 줄인다.
+     (숫자 패드·도구 버튼은 44px 유지) */
+  min-height: 36px;
+  padding: 4px 12px;
 }
 
 .tool[aria-pressed='true'] {
@@ -455,6 +466,16 @@ kbd {
 .tool-state {
   font-size: 12px;
   opacity: 0.8;
+}
+
+.tool-icon {
+  display: none;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.label-narrow {
+  display: none;
 }
 
 .number-pad {
@@ -482,9 +503,53 @@ kbd {
     grid-template-columns: repeat(5, 1fr);
   }
 
-  /* 도구 버튼 4개가 한 줄에 들어가도록 글자를 줄인다. */
+  /* 도구 버튼 5개가 한 줄에 들어가도록 글자를 줄이고, 실행 취소·다시 하기는 기호만 보인다.
+     (이름은 시각적으로만 숨겨 화면 낭독기는 그대로 읽는다) */
   .tool {
     font-size: 14px;
+    white-space: nowrap;
+    /* 글자가 버튼 밖으로 넘쳐 가로 스크롤이 생기지 않게 한다. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tool-icon,
+  .label-narrow {
+    display: inline;
+  }
+
+  /* 켬/끔이 있는 버튼(메모·후보)은 이름 아래에 켬/끔을 작게 두 줄로 표시해 폭을 넘치지 않게 한다. */
+  .tools .tool[aria-pressed] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    line-height: 1.1;
+  }
+
+  .tools .tool[aria-pressed] .tool-state {
+    font-size: 11px;
+  }
+
+  /* 후보 버튼은 짧은 이름으로 바꾼다. 긴 이름은 화면 낭독기에서도 빠지도록 완전히 숨겨,
+     보이는 이름과 읽히는 이름을 같게 한다. (WCAG 2.5.3) */
+  .label-wide {
+    display: none;
+  }
+
+  /* 실행 취소·다시 하기는 기호만 보이고, 이름은 화면 낭독기만 읽는다. */
+  .tool-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .tools {
+    gap: 6px;
   }
 
   /* 제목·도움말·언어 선택기가 한 줄에 들어가도록 언어 선택기의 글자 레이블은 화면 낭독기에만 남긴다. */
@@ -507,7 +572,10 @@ kbd {
   .tool {
     padding: 6px 4px;
     font-size: 13px;
-    white-space: nowrap;
+  }
+
+  .tools {
+    gap: 4px;
   }
 
   .app-header h1 {
@@ -537,7 +605,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 /* 새 게임 메뉴: 보드를 밀어내지 않도록 버튼 아래에 겹쳐 띄운다. */

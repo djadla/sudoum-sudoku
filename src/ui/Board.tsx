@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { colOf, findConflicts, isPeer, rowOf } from '../engine/grid';
+import { candidateMasks, colOf, findConflicts, isPeer, rowOf } from '../engine/grid';
 import type { HintView } from '../engine/hintTypes';
 import { hasNote, isGiven, noteBit, noteDigits, type GameState } from '../game/state';
 import { useI18n } from '../i18n/I18nProvider';
@@ -81,6 +81,11 @@ export function Board({ state, onSelect, hint }: BoardProps) {
   // 같은 행·열·박스에 같은 숫자가 겹친 칸 (주어진 숫자도 포함해 양쪽 모두 표시한다)
   const conflicts = useMemo(() => findConflicts(values), [values]);
   const marks = useMemo(() => toMarks(hint, values, notes), [hint, values, notes]);
+  // 후보 보기: 빈칸마다 같은 행·열·박스에 없는 숫자. 메모를 적은 칸은 메모가 우선이다.
+  const candidates = useMemo(
+    () => (state.showCandidates ? candidateMasks(values) : null),
+    [state.showCandidates, values],
+  );
 
   // 키보드로 선택을 옮겼을 때, 포커스가 보드 안에 있으면 포커스도 따라가게 한다.
   // (숫자 패드 버튼 등 보드 밖의 포커스는 빼앗지 않는다)
@@ -98,7 +103,10 @@ export function Board({ state, onSelect, hint }: BoardProps) {
     else if (value !== 0) label = t('board.cellFilled', { ...position, value });
     else {
       const digits = noteDigits(notes[index]!);
-      label = digits.length > 0 ? t('board.cellNotes', { ...position, notes: digits.join(', ') }) : t('board.cellEmpty', position);
+      const auto = candidates ? noteDigits(candidates[index]!) : [];
+      if (digits.length > 0) label = t('board.cellNotes', { ...position, notes: digits.join(', ') });
+      else if (auto.length > 0) label = t('board.cellCandidates', { ...position, notes: auto.join(', ') });
+      else label = t('board.cellEmpty', position);
     }
     if (value !== 0 && conflicts[index]) label = t('board.withDuplicate', { label });
     if (marks.focus === index) label = t('board.withHint', { label });
@@ -126,8 +134,11 @@ export function Board({ state, onSelect, hint }: BoardProps) {
             if (row % 3 === 2 && row < 8) classes.push('box-bottom');
 
             const preview = marks.preview.get(index);
+            const auto = candidates?.[index] ?? 0;
             const added = marks.add.get(index);
-            const noteMask = (notes[index] || preview || 0) | (added ? noteBit(added) : 0);
+            // 표시 우선순위: 사용자 메모 → 힌트가 본 후보 → 후보 보기
+            const noteMask = (notes[index] || preview || auto) | (added ? noteBit(added) : 0);
+            const faded = !notes[index] && (preview || auto) ? true : undefined;
             const eliminated = marks.eliminate.get(index);
             const inPattern = marks.pattern.has(index);
 
@@ -156,7 +167,12 @@ export function Board({ state, onSelect, hint }: BoardProps) {
                 {value !== 0 ? (
                   value
                 ) : noteMask !== 0 ? (
-                  <span className="notes" aria-hidden="true" data-preview={(!notes[index] && preview) || undefined}>
+                  <span
+                    className="notes"
+                    aria-hidden="true"
+                    data-preview={faded}
+                    data-auto={(!notes[index] && !preview && auto) || undefined}
+                  >
                     {DIGITS.map((digit) => {
                       const shown = hasNote(noteMask, digit);
                       return (

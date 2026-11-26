@@ -15,11 +15,13 @@ const PLAY = [
   'guide.play4',
   'guide.play5',
   'guide.play6',
+  'guide.play7',
 ] as const satisfies readonly MessageKey[];
 const KEYS = [
   ['guide.keyDigits', 'guide.keyDigitsDesc'],
   ['guide.keyErase', 'guide.keyEraseDesc'],
   ['guide.keyNotes', 'guide.keyNotesDesc'],
+  ['guide.keyCandidates', 'guide.keyCandidatesDesc'],
   ['guide.keyMove', 'guide.keyMoveDesc'],
   ['guide.keyUndo', 'guide.keyUndoDesc'],
   ['guide.keyRedo', 'guide.keyRedoDesc'],

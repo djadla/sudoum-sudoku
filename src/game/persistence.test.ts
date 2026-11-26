@@ -2,14 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPuzzle } from '../engine/puzzle';
 import {
+  CANDIDATES_KEY,
   DIFFICULTY_KEY,
   SAVE_KEY,
   clearSavedGame,
   loadDifficulty,
   loadSavedGame,
+  loadShowCandidates,
   parseSavedGame,
   saveDifficulty,
   saveGame,
+  saveShowCandidates,
   toSavedGame,
   type SavedGame,
 } from './persistence';
@@ -148,6 +151,15 @@ describe('저장소 입출력', () => {
     expect(loadDifficulty()).toBeNull();
   });
 
+  it('후보 보기 설정을 저장하고, 끄면 지운다', () => {
+    expect(loadShowCandidates()).toBe(false);
+    saveShowCandidates(true);
+    expect(localStorage.getItem(CANDIDATES_KEY)).toBe('true');
+    expect(loadShowCandidates()).toBe(true);
+    saveShowCandidates(false);
+    expect(localStorage.getItem(CANDIDATES_KEY)).toBeNull();
+  });
+
   it('저장소를 쓸 수 없어도 예외를 던지지 않는다', () => {
     vi.stubGlobal('window', {
       get localStorage(): Storage {
@@ -157,6 +169,8 @@ describe('저장소 입출력', () => {
     expect(() => saveGame(toSavedGame('easy', playedState()))).not.toThrow();
     expect(() => clearSavedGame()).not.toThrow();
     expect(() => saveDifficulty('hard')).not.toThrow();
+    expect(() => saveShowCandidates(true)).not.toThrow();
+    expect(loadShowCandidates()).toBe(false);
     expect(loadSavedGame()).toBeNull();
     expect(loadDifficulty()).toBeNull();
   });

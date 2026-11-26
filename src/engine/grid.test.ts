@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boxOf, colOf, findConflicts, indexOf, isPeer, isSolved, peersOf, rowOf, UNITS } from './grid';
+import { boxOf, candidateMasks, colOf, findConflicts, indexOf, isPeer, isSolved, peersOf, rowOf, UNITS } from './grid';
 import { createPuzzle } from './puzzle';
 
 describe('UNITS', () => {
@@ -87,5 +87,40 @@ describe('isSolved', () => {
     const values = [...solution];
     values[10] = 0;
     expect(isSolved(values, solution)).toBe(false);
+  });
+});
+
+describe('candidateMasks', () => {
+  const digitsOf = (mask: number) => [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => mask & (1 << d));
+
+  it('빈 보드의 모든 칸은 1~9가 후보다', () => {
+    const masks = candidateMasks(Array(81).fill(0));
+    expect(masks.every((m) => digitsOf(m).length === 9)).toBe(true);
+  });
+
+  it('같은 행·열·박스에 있는 숫자는 후보에서 빠지고, 숫자가 있는 칸은 후보가 없다', () => {
+    const values = Array<number>(81).fill(0);
+    values[indexOf(0, 8)] = 1; // 같은 행
+    values[indexOf(8, 0)] = 2; // 같은 열
+    values[indexOf(2, 2)] = 3; // 같은 박스
+    values[indexOf(4, 4)] = 4; // 관계없는 칸
+    const masks = candidateMasks(values);
+    expect(digitsOf(masks[indexOf(0, 0)]!)).toEqual([4, 5, 6, 7, 8, 9]);
+    expect(masks[indexOf(0, 8)]).toBe(0);
+  });
+
+  it('후보 마스크에는 0번 비트(숫자 0)가 들어가지 않는다 (빈 이웃 칸의 0이 섞이지 않음)', () => {
+    const puzzle = createPuzzle('L1', 12345);
+    for (const mask of [...candidateMasks(Array(81).fill(0)), ...candidateMasks(puzzle.givens)]) {
+      expect(mask & 1).toBe(0);
+      expect(mask >> 10).toBe(0);
+    }
+  });
+
+  it('정답 보드의 칸을 하나 비우면 그 칸의 후보는 정답 하나뿐이다', () => {
+    const puzzle = createPuzzle('L1', 12345);
+    const values = [...puzzle.solution];
+    values[40] = 0;
+    expect(digitsOf(candidateMasks(values)[40]!)).toEqual([puzzle.solution[40]]);
   });
 });

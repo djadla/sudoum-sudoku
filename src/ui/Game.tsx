@@ -10,6 +10,7 @@ import {
   type GameAction,
   type GameState,
 } from '../game/state';
+import { saveShowCandidates } from '../game/persistence';
 import { useI18n } from '../i18n/I18nProvider';
 import { HintSupersededError, requestHint } from '../workers/requestHint';
 import { Board } from './Board';
@@ -48,6 +49,7 @@ export function keyToAction(key: string): GameAction | null {
   if (/^[1-9]$/.test(key)) return { type: 'input', digit: Number(key) };
   if (key === 'Backspace' || key === 'Delete' || key === '0') return { type: 'erase' };
   if (key === 'n' || key === 'N') return { type: 'toggleNoteMode' };
+  if (key === 'c' || key === 'C') return { type: 'toggleCandidates' };
   const arrow = ARROWS[key];
   return arrow ? { type: 'move', ...arrow } : null;
 }
@@ -88,6 +90,17 @@ export function Game({ initialState, onChange, hintSlot }: GameProps) {
   useEffect(() => {
     onChange?.(state);
   }, [values, notes, hintsLeft, onChange]);
+
+  // 후보 보기 켬/끔은 게임과 별개인 사용자 설정으로 기억한다.
+  const { showCandidates } = state;
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    saveShowCandidates(showCandidates);
+  }, [showCandidates]);
 
   // 보드가 바뀌면 보여 주던 힌트는 더 이상 맞지 않으므로 닫는다.
   useEffect(() => {
@@ -219,6 +232,8 @@ export function Game({ initialState, onChange, hintSlot }: GameProps) {
         onDigit={(digit) => dispatch({ type: 'input', digit })}
         onErase={() => dispatch({ type: 'erase' })}
         onToggleNoteMode={() => dispatch({ type: 'toggleNoteMode' })}
+        showCandidates={state.showCandidates}
+        onToggleCandidates={() => dispatch({ type: 'toggleCandidates' })}
         onUndo={() => dispatch({ type: 'undo' })}
         onRedo={() => dispatch({ type: 'redo' })}
       />

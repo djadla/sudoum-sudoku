@@ -226,6 +226,19 @@ describe('App', () => {
     expect(dialog.open).toBe(true);
   });
 
+  it('후보 보기 설정을 기억해 새 게임에도 적용한다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    await user.click(screen.getByRole('button', { name: /Candidates/ }));
+    expect(localStorage.getItem('sudoum.showCandidates')).toBe('true');
+
+    await user.click(screen.getByRole('button', { name: 'New game' }));
+    await user.click(screen.getByRole('button', { name: /^Easy/ }));
+    await resolveLast(asLevel('L2', 777));
+    expect(screen.getByRole('button', { name: /Candidates/ }).getAttribute('aria-pressed')).toBe('true');
+  });
+
   describe('힌트 (실제 계산)', () => {
     /** 보통(힌트 1회)으로 시작한다. 퍼즐은 쉬운 퍼즐에 레벨만 바꿔 쓴다. */
     async function startMedium() {

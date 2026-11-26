@@ -4,6 +4,7 @@ import { randomSeed } from './engine/seed';
 import {
   clearSavedGame,
   loadDifficulty,
+  loadShowCandidates,
   loadSavedGame,
   saveDifficulty,
   saveGame,
@@ -32,7 +33,7 @@ function initialPhase(): Phase {
     return {
       kind: 'ready',
       difficulty: saved.difficulty,
-      game: restoreGame(saved.puzzle, saved.values, saved.notes, saved.hintsLeft),
+      game: { ...restoreGame(saved.puzzle, saved.values, saved.notes, saved.hintsLeft), showCandidates: loadShowCandidates() },
     };
   }
   return { kind: 'loading', difficulty: loadDifficulty() ?? DEFAULT_DIFFICULTY };
@@ -61,7 +62,11 @@ export function App() {
     generatePuzzle(levelOf(difficulty), randomSeed()).then(
       (puzzle) => {
         if (request !== latestRequest.current) return;
-        setPhase({ kind: 'ready', difficulty, game: createGame(puzzle, HINT_ALLOWANCE[difficulty]) });
+        setPhase({
+          kind: 'ready',
+          difficulty,
+          game: { ...createGame(puzzle, HINT_ALLOWANCE[difficulty]), showCandidates: loadShowCandidates() },
+        });
       },
       (error: unknown) => {
         if (error instanceof GenerationCancelledError || request !== latestRequest.current) return;

@@ -24,6 +24,8 @@ export interface GameState {
   readonly notes: readonly NoteMask[];
   readonly selected: number | null;
   readonly noteMode: boolean;
+  /** 후보 숫자 자동 표시(보기 전용). 보드·메모는 바꾸지 않는다. */
+  readonly showCandidates: boolean;
   readonly status: GameStatus;
   readonly past: readonly HistoryEntry[];
   readonly future: readonly HistoryEntry[];
@@ -37,6 +39,7 @@ export type GameAction =
   | { readonly type: 'input'; readonly digit: number }
   | { readonly type: 'erase' }
   | { readonly type: 'toggleNoteMode' }
+  | { readonly type: 'toggleCandidates' }
   | { readonly type: 'undo' }
   | { readonly type: 'redo' }
   /** 힌트를 보여 줄 때 1회 쓴다. */
@@ -70,6 +73,7 @@ export function createGame(puzzle: Puzzle, hintsLeft = 0): GameState {
     notes: Array<NoteMask>(CELL_COUNT).fill(0),
     selected: null,
     noteMode: false,
+    showCandidates: false,
     status: 'playing',
     past: [],
     future: [],
@@ -227,6 +231,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'toggleNoteMode':
       return { ...state, noteMode: !state.noteMode };
+
+    case 'toggleCandidates':
+      return { ...state, showCandidates: !state.showCandidates };
 
     case 'input':
       if (state.status === 'solved' || state.selected === null) return state;

@@ -380,3 +380,15 @@ describe('힌트', () => {
     expect(gameReducer(state, { type: 'applyHint', hint: { kind: 'impossibleNote', cell: firstEmpty, digit: 4 } })).toBe(state);
   });
 });
+
+describe('후보 보기', () => {
+  it('켜고 끄며, 보드·메모·실행 취소 기록은 바꾸지 않는다', () => {
+    const before = run({ type: 'select', index: firstEmpty }, { type: 'input', digit: wrong });
+    const on = gameReducer(before, { type: 'toggleCandidates' });
+    expect(on.showCandidates).toBe(true);
+    expect(on.values).toBe(before.values);
+    expect(on.notes).toBe(before.notes);
+    expect(on.past).toBe(before.past);
+    expect(gameReducer(on, { type: 'toggleCandidates' }).showCandidates).toBe(false);
+  });
+});

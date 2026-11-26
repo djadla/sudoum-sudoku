@@ -4,6 +4,7 @@
 
 - 플레이: https://djadla.github.io/sudoum-sudoku/ (배포 후 열림)
 - 해가 정확히 하나인 퍼즐을 난이도별로 생성합니다. ([sudoku-core](https://github.com/komeilmehranfar/sudoku-core), MIT)
+- 후보 보기: 빈칸마다 같은 행·열·박스에 없는 숫자를 자동으로 보여 줍니다.
 - 다음 수를 설명하는 힌트를 제공합니다. 틀린 숫자·메모를 먼저 알려 주고, 적용하면 채워 줍니다.
 - 한국어·영어를 지원합니다.
 

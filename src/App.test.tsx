@@ -63,7 +63,7 @@ describe('App', () => {
   it('마지막으로 고른 난이도로 시작한다', () => {
     localStorage.setItem(DIFFICULTY_KEY, 'expert');
     renderWithI18n(<App />);
-    expect(requests.map((r) => r.level)).toEqual(['L8']);
+    expect(requests.map((r) => r.level)).toEqual(['L7']);
   });
 
   it('저장된 게임이 있으면 생성 없이 이어서 한다', () => {
@@ -101,13 +101,13 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Hard' }));
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(requests.map((r) => r.level)).toEqual(['L2', 'L6']);
+    expect(requests.map((r) => r.level)).toEqual(['L2', 'L5']);
     expect(screen.getByRole('status').textContent).toContain('Hard');
     expect(localStorage.getItem(DIFFICULTY_KEY)).toBe('hard');
     // 새 퍼즐을 만드는 동안 이전 게임의 저장은 지운다.
     expect(localStorage.getItem(SAVE_KEY)).toBeNull();
 
-    await resolveLast(asLevel('L6', 31337));
+    await resolveLast(asLevel('L5', 31337));
     expect(screen.getByText('Hard · Seed 31337')).toBeTruthy();
     expect(savedJson().difficulty).toBe('hard');
   });
@@ -150,8 +150,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Master' }));
 
     const [, hard, master] = requests;
-    await act(async () => master!.resolve(asLevel('L10', 1010)));
-    await act(async () => hard!.resolve(asLevel('L6', 606))); // 늦게 끝난 이전 요청
+    await act(async () => master!.resolve(asLevel('L9', 1010)));
+    await act(async () => hard!.resolve(asLevel('L5', 606))); // 늦게 끝난 이전 요청
     expect(screen.getByText('Master · Seed 1010')).toBeTruthy();
   });
 
@@ -244,8 +244,8 @@ describe('App', () => {
     async function startMedium() {
       localStorage.setItem(DIFFICULTY_KEY, 'medium');
       renderWithI18n(<App />);
-      expect(requests.map((r) => r.level)).toEqual(['L4']);
-      await resolveLast(asLevel('L4', 4242));
+      expect(requests.map((r) => r.level)).toEqual(['L3']);
+      await resolveLast(asLevel('L3', 4242));
       return screen.getByRole('button', { name: 'Hint 1' }) as HTMLButtonElement;
     }
 

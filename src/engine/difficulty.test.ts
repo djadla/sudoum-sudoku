@@ -6,7 +6,7 @@ import { createPuzzle } from './puzzle';
 describe('난이도', () => {
   it('5단계를 쉬운 순서로 정의한다', () => {
     expect(DIFFICULTY_IDS).toEqual(['easy', 'medium', 'hard', 'expert', 'master']);
-    expect(DIFFICULTY_IDS.map(levelOf)).toEqual(['L2', 'L4', 'L6', 'L8', 'L10']);
+    expect(DIFFICULTY_IDS.map(levelOf)).toEqual(['L2', 'L3', 'L5', 'L7', 'L9']);
     expect(DEFAULT_DIFFICULTY).toBe('easy');
   });
 

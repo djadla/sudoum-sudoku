@@ -342,6 +342,40 @@ describe('App', () => {
       expect(toggle.getAttribute('aria-expanded')).toBe('true');
     });
 
+    it('힌트의 "이 기법 배우기"는 도움말을 그 기법 설명으로 열고, 닫으면 그 버튼으로 포커스를 돌려준다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+      const panel = await screen.findByRole('region');
+      const title = within(panel).getByRole('heading').textContent!;
+      const learn = within(panel).getByRole('button', { name: 'Learn this technique' });
+      await user.click(learn);
+
+      const dialog = screen.getByRole('dialog', { name: 'Guide' }) as HTMLDialogElement;
+      expect(dialog.open).toBe(true);
+      const selectedTab = within(dialog).getAllByRole('tab').find((t) => t.getAttribute('aria-selected') === 'true')!;
+      expect(['Basic solving', 'Advanced solving']).toContain(selectedTab.textContent);
+      const chip = dialog.querySelector('.lesson-chips [aria-pressed="true"]')!;
+      expect(chip.textContent).toBe(title); // 힌트의 기법 이름과 같은 설명
+      expect(within(dialog).getByRole('tabpanel').querySelector('h3')!.textContent).toBe(title);
+
+      await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+      expect(document.activeElement).toBe(learn);
+      expect(screen.getByRole('region')).toBeTruthy(); // 힌트는 그대로
+    });
+
+    it('도움말 버튼으로 열면 플레이 방법 탭부터 보여 준다', async () => {
+      const user = userEvent.setup();
+      const button = await startMedium();
+      await user.click(button);
+      await user.click(within(await screen.findByRole('region')).getByRole('button', { name: 'Learn this technique' }));
+      await user.click(within(screen.getByRole('dialog', { name: 'Guide' })).getByRole('button', { name: 'Close' }));
+      await user.click(screen.getByRole('button', { name: 'How to play' }));
+      const dialog = screen.getByRole('dialog', { name: 'Guide' });
+      const selectedTab = within(dialog).getAllByRole('tab').find((t) => t.getAttribute('aria-selected') === 'true')!;
+      expect(selectedTab.textContent).toBe('How to play');
+    });
+
     it('힌트를 보는 중에 보드를 바꾸면 힌트를 닫는다', async () => {
       const user = userEvent.setup();
       const button = await startMedium();

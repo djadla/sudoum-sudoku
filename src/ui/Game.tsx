@@ -16,6 +16,7 @@ import { HintSupersededError, requestHint } from '../workers/requestHint';
 import { Board } from './Board';
 import { Controls } from './Controls';
 import { HintPanel } from './HintPanel';
+import { lessonForHint, type LessonTarget } from './guide/lessons';
 import { describeHint } from './hintText';
 
 interface GameProps {
@@ -29,6 +30,8 @@ interface GameProps {
    * (막대를 Game이 그리면 새 게임마다 "새 게임" 메뉴가 다시 마운트되어 포커스를 잃는다)
    */
   readonly hintSlot?: HTMLElement | null;
+  /** 힌트의 "이 기법 배우기": 도움말을 해당 설명으로 연다. */
+  readonly onLearn?: (target: LessonTarget) => void;
 }
 
 type HintState =
@@ -72,7 +75,7 @@ export function eventToAction(event: KeyInput): GameAction | null {
 }
 
 /** 퍼즐 하나의 플레이 화면. 새 게임은 부모가 key를 바꿔 다시 마운트한다. */
-export function Game({ initialState, onChange, hintSlot }: GameProps) {
+export function Game({ initialState, onChange, hintSlot, onLearn }: GameProps) {
   const { t } = useI18n();
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const solved = state.status === 'solved';
@@ -191,6 +194,7 @@ export function Game({ initialState, onChange, hintSlot }: GameProps) {
   }, [hint]);
 
   const shownHint = hint?.status === 'shown' ? hint.view : null;
+  const learnTarget = shownHint && onLearn ? lessonForHint(shownHint) : null;
 
   return (
     <section ref={sectionRef} className="game">
@@ -222,6 +226,7 @@ export function Game({ initialState, onChange, hintSlot }: GameProps) {
           state={hint.status === 'shown' ? { status: 'shown', text: describeHint(t, hint.view) } : hint}
           onApply={applyHint}
           onClose={() => closeHint()}
+          onLearn={learnTarget ? () => onLearn?.(learnTarget) : undefined}
         />
       ) : (
       <Controls

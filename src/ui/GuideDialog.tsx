@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { MessageKey } from '../i18n';
 import { useI18n } from '../i18n/I18nProvider';
+import { AdvancedLessonsPanel, BasicLessonsPanel } from './guide/LessonsPanel';
 
 interface GuideDialogProps {
   readonly open: boolean;
@@ -28,8 +29,16 @@ const KEYS = [
   ['guide.keyClose', 'guide.keyCloseDesc'],
 ] as const satisfies readonly (readonly [MessageKey, MessageKey])[];
 
+const TABS = [
+  { id: 'play', label: 'lesson.tabPlay' },
+  { id: 'basic', label: 'lesson.tabBasic' },
+  { id: 'advanced', label: 'lesson.tabAdvanced' },
+] as const satisfies readonly { id: string; label: MessageKey }[];
+
+type TabId = (typeof TABS)[number]['id'];
+
 /**
- * 규칙·조작법·단축키 안내.
+ * 규칙·조작법·단축키 안내와 풀이 설명. 세 탭(플레이 방법 / 기본 풀이 / 고급 풀이)으로 나눈다.
  * 브라우저 기본 모달 `<dialog>`를 써서 바깥 내용 비활성화·Esc 닫기를 브라우저에 맡긴다.
  */
 export function GuideDialog({ open, onClose }: GuideDialogProps) {
@@ -37,6 +46,29 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+  const tabsId = useId();
+  const [tab, setTab] = useState<TabId>('play');
+  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({ play: null, basic: null, advanced: null });
+
+  // 탭 목록 안에서는 방향키·Home·End로 탭을 옮긴다. (WAI-ARIA Tabs 패턴, 선택과 동시에 표시)
+  function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const index = TABS.findIndex((item) => item.id === tab);
+    const next =
+      event.key === 'ArrowRight'
+        ? (index + 1) % TABS.length
+        : event.key === 'ArrowLeft'
+          ? (index - 1 + TABS.length) % TABS.length
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? TABS.length - 1
+              : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    const id = TABS[next]!.id;
+    setTab(id);
+    tabRefs.current[id]?.focus();
+  }
 
   // 닫기는 한 경로로만 처리한다: 무엇으로 닫든(닫기 버튼·Esc·부모의 open=false) 실제 <dialog>를 닫고,
   // 그때 브라우저가 보내는 close 이벤트에서만 onClose를 부른다. (onClose가 두 번 불리지 않게)
@@ -69,31 +101,66 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
         </button>
       </div>
 
-      <h3>{t('guide.rulesTitle')}</h3>
-      <ul>
-        {RULES.map((key) => (
-          <li key={key}>{t(key)}</li>
+      <div className="guide-tabs" role="tablist" aria-label={t('lesson.tabsLabel')} onKeyDown={onTabKeyDown}>
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            ref={(el) => {
+              tabRefs.current[item.id] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${tabsId}-tab-${item.id}`}
+            aria-selected={tab === item.id}
+            aria-controls={`${tabsId}-panel-${item.id}`}
+            tabIndex={tab === item.id ? 0 : -1}
+            className="guide-tab"
+            onClick={() => setTab(item.id)}
+          >
+            {t(item.label)}
+          </button>
         ))}
-      </ul>
+      </div>
 
-      <h3>{t('guide.playTitle')}</h3>
-      <ul>
-        {PLAY.map((key) => (
-          <li key={key}>{t(key)}</li>
-        ))}
-      </ul>
+      <div
+        role="tabpanel"
+        id={`${tabsId}-panel-${tab}`}
+        aria-labelledby={`${tabsId}-tab-${tab}`}
+        className="guide-panel"
+        tabIndex={0}
+      >
+        {tab === 'play' && (
+          <>
+            <h3>{t('guide.rulesTitle')}</h3>
+            <ul>
+              {RULES.map((key) => (
+                <li key={key}>{t(key)}</li>
+              ))}
+            </ul>
 
-      <h3>{t('guide.keysTitle')}</h3>
-      <dl className="guide-keys">
-        {KEYS.map(([key, desc]) => (
-          <div key={key}>
-            <dt>
-              <kbd>{t(key)}</kbd>
-            </dt>
-            <dd>{t(desc)}</dd>
-          </div>
-        ))}
-      </dl>
+            <h3>{t('guide.playTitle')}</h3>
+            <ul>
+              {PLAY.map((key) => (
+                <li key={key}>{t(key)}</li>
+              ))}
+            </ul>
+
+            <h3>{t('guide.keysTitle')}</h3>
+            <dl className="guide-keys">
+              {KEYS.map(([key, desc]) => (
+                <div key={key}>
+                  <dt>
+                    <kbd>{t(key)}</kbd>
+                  </dt>
+                  <dd>{t(desc)}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
+        {tab === 'basic' && <BasicLessonsPanel />}
+        {tab === 'advanced' && <AdvancedLessonsPanel />}
+      </div>
     </dialog>
   );
 }

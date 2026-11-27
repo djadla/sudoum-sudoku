@@ -1,7 +1,7 @@
 import en from './locales/en';
 import type { MessageKey, MessageParams, Messages, MessageTree } from './messages';
 
-export type { MessageKey, Messages, MessageTree, Translate } from './messages';
+export type { MessageKey, Messages, MessageTree, PlainMessageKey, Translate } from './messages';
 
 export const SUPPORTED_LOCALES = ['en', 'ko'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];

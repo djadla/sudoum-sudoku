@@ -43,3 +43,6 @@ export type ParamsArg<K extends MessageKey> = [ParamNames<Lookup<Source, K>>] ex
   : [params: Record<ParamNames<Lookup<Source, K>>, string | number>];
 
 export type Translate = <K extends MessageKey>(key: K, ...params: ParamsArg<K>) => string;
+
+/** {파라미터}가 없는 키. 데이터로 넘긴 키를 t(key) 한 인자로 바로 쓸 수 있다. (예: 풀이 설명 단계 문장) */
+export type PlainMessageKey = { [K in MessageKey]: ParamsArg<K> extends [] ? K : never }[MessageKey];

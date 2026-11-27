@@ -188,7 +188,7 @@ describe('App', () => {
     const help = screen.getByRole('button', { name: 'How to play' });
     expect(help.getAttribute('aria-haspopup')).toBe('dialog');
     await user.click(help);
-    const dialog = screen.getByRole('dialog', { name: 'How to play' }) as HTMLDialogElement;
+    const dialog = screen.getByRole('dialog', { name: 'Guide' }) as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     expect(within(dialog).getByText(/exactly once/)).toBeTruthy();
     expect(within(dialog).getByText('Ctrl/⌘ + Z')).toBeTruthy();

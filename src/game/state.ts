@@ -258,3 +258,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return state.status === 'playing' ? applyHint(state, action.hint) : state;
   }
 }
+
+/**
+ * 보드에 9개가 모두 놓인 숫자. 숫자 패드에서 그 버튼을 비활성화하는 데 쓴다.
+ * 정답과 비교하지 않는다. (틀린 숫자가 섞여 9개가 되면 충돌 표시가 나타나고, 지우면 다시 활성화된다)
+ */
+export function completedDigits(values: readonly number[]): ReadonlySet<number> {
+  const counts = Array<number>(10).fill(0);
+  for (const value of values) counts[value]!++;
+  return new Set([1, 2, 3, 4, 5, 6, 7, 8, 9].filter((digit) => counts[digit]! >= 9));
+}

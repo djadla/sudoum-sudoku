@@ -2,6 +2,7 @@ import { indexOf } from '../../engine/grid';
 import { CELL_COUNT } from '../../engine/types';
 import type { HintView, TacticKey } from '../../engine/hintTypes';
 import type { PlainMessageKey } from '../../i18n';
+import { pointingShape } from '../hintText';
 
 // 플레이 가이드의 "풀이" 탭에서 보여 주는 움직이는 설명 데이터. (2026-11-26 사용자 요청)
 // 예제 보드는 직접 만든 것이며, 각 예제가 설명하는 결론이 규칙상 성립하는지는 lessons.test.ts가 검사한다.
@@ -40,6 +41,14 @@ export type LessonClaim =
   | { readonly kind: 'openSingle'; readonly house: readonly number[]; readonly index: number; readonly digit: number }
   | { readonly kind: 'hiddenSingle'; readonly house: readonly number[]; readonly index: number; readonly digit: number }
   | { readonly kind: 'candidates'; readonly index: number; readonly digits: readonly number[] }
+  /** 포인팅(줄 → 박스): 줄 안에서 digit의 후보가 모두 box 안에 있으면, box의 줄 밖 칸에서 digit을 지운다. */
+  | {
+      readonly kind: 'claiming';
+      readonly line: readonly number[];
+      readonly box: readonly number[];
+      readonly digit: number;
+      readonly eliminations: readonly CellDigit[];
+    }
   /** 포인팅: 박스 안에서 digit의 후보가 모두 line 위에 있으면, line의 박스 밖 칸에서 digit을 지운다. */
   | {
       readonly kind: 'pointing';
@@ -230,7 +239,7 @@ const pointingNotes = notesOf([
 const pointingStrike = [cd(2, 4, 5), cd(2, 6, 5), cd(2, 8, 5)];
 const pointing: Lesson = {
   id: 'pointing',
-  title: 'hint.tactic.pointing',
+  title: 'lesson.pointing.title',
   summary: 'lesson.advanced.pointing',
   values: board([[1, 2, 3], [2, 2, 9], [3, 3, 8]]),
   notes: pointingNotes,
@@ -241,6 +250,27 @@ const pointing: Lesson = {
     { caption: 'lesson.pointing.s4', region: row(2), notes: afterStrike(pointingNotes, pointingStrike) },
   ],
   claim: { kind: 'pointing', box: box(1), line: row(2), digit: 5, eliminations: pointingStrike },
+};
+
+// 5-2. 포인팅(줄 → 박스): 5행에서 3의 후보는 4번 박스 안에만 있다 → 4번 박스의 다른 칸에서 3을 지운다.
+const claimingNotes = notesOf([
+  [5, 1, [2, 3]], [5, 2, [3, 6]], [5, 3, [4, 9]], [5, 4, [2, 4]], [5, 6, [6, 9]], [5, 7, [2, 5]], [5, 9, [4, 5]],
+  [4, 1, [1, 3]], [4, 2, [2, 8]], [4, 3, [3, 5]], [6, 1, [6, 8]], [6, 2, [3, 4]], [6, 3, [1, 2]],
+]);
+const claimingStrike = [cd(4, 1, 3), cd(4, 3, 3), cd(6, 2, 3)];
+const claiming: Lesson = {
+  id: 'claiming',
+  title: 'lesson.claiming.title',
+  summary: 'lesson.claiming.summary',
+  values: board([[5, 5, 7], [5, 8, 1]]),
+  notes: claimingNotes,
+  frames: [
+    { caption: 'lesson.claiming.s1', region: row(5), mark: marksOf(claimingNotes, [3], row(5)) },
+    { caption: 'lesson.claiming.s2', region: [...row(5), ...box(4)], pattern: [at(5, 1), at(5, 2)], mark: marksOf(claimingNotes, [3], row(5)) },
+    { caption: 'lesson.claiming.s3', region: box(4), pattern: [at(5, 1), at(5, 2)], strike: claimingStrike },
+    { caption: 'lesson.claiming.s4', region: box(4), notes: afterStrike(claimingNotes, claimingStrike) },
+  ],
+  claim: { kind: 'claiming', line: row(5), box: box(4), digit: 3, eliminations: claimingStrike },
 };
 
 // 6. 드러난 쌍: 1행 2열과 1행 5열의 후보가 모두 {3, 8} → 1행의 다른 칸에서 3, 8을 지운다.
@@ -352,7 +382,7 @@ const yWing: Lesson = {
 };
 
 /** 고급 풀이 탭의 순서 */
-export const ADVANCED_LESSONS: readonly Lesson[] = [pointing, nakedPair, nakedTriple, hiddenPair, xWing, yWing];
+export const ADVANCED_LESSONS: readonly Lesson[] = [pointing, claiming, nakedPair, nakedTriple, hiddenPair, xWing, yWing];
 
 /** 모든 설명. 힌트의 "이 기법 배우기"가 id로 찾는다. */
 export const ALL_LESSONS: readonly Lesson[] = [...BASIC_LESSONS, ...ADVANCED_LESSONS];
@@ -378,11 +408,14 @@ const LESSON_BY_TACTIC: Partial<Record<TacticKey, string>> = {
 /**
  * 힌트에 맞는 설명. 힌트의 "이 기법 배우기"가 쓴다. 설명이 없는 기법·틀린 숫자는 null.
  * 메모 점검(틀린·빠진 메모)은 "후보 적기" 설명으로 안내한다.
+ * 포인팅은 힌트 문장과 같은 판정(pointingShape)으로 방향을 정하고, 판정할 수 없으면 기본(박스 → 줄) 설명으로 연결한다.
  */
 export function lessonForHint(hint: HintView): LessonTarget | null {
   const id =
     hint.kind === 'technique'
-      ? LESSON_BY_TACTIC[hint.tactic]
+      ? hint.tactic === 'pointing' && pointingShape(hint)?.direction === 'lineToBox'
+        ? 'claiming'
+        : LESSON_BY_TACTIC[hint.tactic]
       : hint.kind === 'impossibleNote' || hint.kind === 'missingNote'
         ? 'candidates'
         : undefined;

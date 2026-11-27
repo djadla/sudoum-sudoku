@@ -5,6 +5,7 @@ import {
   HISTORY_LIMIT,
   canRedo,
   canUseHint,
+  completedDigits,
   findWrongValue,
   canUndo,
   createGame,
@@ -390,5 +391,24 @@ describe('후보 보기', () => {
     expect(on.notes).toBe(before.notes);
     expect(on.past).toBe(before.past);
     expect(gameReducer(on, { type: 'toggleCandidates' }).showCandidates).toBe(false);
+  });
+});
+
+describe('completedDigits', () => {
+  it('보드에 9개가 모두 놓인 숫자만 돌려준다', () => {
+    expect(completedDigits(puzzle.solution)).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+    expect(completedDigits(Array(81).fill(0)).size).toBe(0);
+    const values = [...puzzle.solution];
+    values[firstEmpty] = 0;
+    expect(completedDigits(values).has(answer)).toBe(false);
+    expect(completedDigits(values).size).toBe(8);
+  });
+
+  it('정답과 비교하지 않는다 (틀린 숫자로 9개가 되어도 완료로 본다)', () => {
+    const values = [...puzzle.solution];
+    values[firstEmpty] = wrong; // answer는 8개, wrong은 10개
+    const done = completedDigits(values);
+    expect(done.has(wrong)).toBe(true);
+    expect(done.has(answer)).toBe(false);
   });
 });

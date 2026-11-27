@@ -1,9 +1,12 @@
+import { useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 
 interface ControlsProps {
   readonly noteMode: boolean;
   readonly showCandidates: boolean;
   readonly disabled: boolean;
+  /** 보드에 9개가 모두 놓인 숫자 (버튼을 비활성화한다) */
+  readonly completed: ReadonlySet<number>;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
   readonly onDigit: (digit: number) => void;
@@ -17,9 +20,23 @@ interface ControlsProps {
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export function Controls(props: ControlsProps) {
-  const { noteMode, showCandidates, disabled, canUndo, canRedo } = props;
+  const { noteMode, showCandidates, disabled, canUndo, canRedo, completed } = props;
   const { onDigit, onErase, onToggleNoteMode, onToggleCandidates, onUndo, onRedo } = props;
   const { t } = useI18n();
+  const padRef = useRef<HTMLDivElement>(null);
+
+  // 숫자 버튼으로 9번째를 채워 그 버튼이 비활성화되면 키보드 초점이 사라진다.
+  // 이때 다음으로 쓸 수 있는 숫자 버튼(없으면 앞쪽)으로 초점을 옮긴다.
+  const completedKey = [...completed].sort().join(',');
+  useEffect(() => {
+    const pad = padRef.current;
+    const active = document.activeElement;
+    if (!pad || !(active instanceof HTMLButtonElement) || !pad.contains(active) || !active.disabled) return;
+    const buttons = [...pad.querySelectorAll<HTMLButtonElement>('button')];
+    const from = buttons.indexOf(active);
+    const next = [...buttons.slice(from + 1), ...buttons.slice(0, from)].find((button) => !button.disabled);
+    next?.focus();
+  }, [completedKey]);
 
   return (
     <div className="controls" role="group" aria-label={t('controls.label')}>
@@ -65,7 +82,7 @@ export function Controls(props: ControlsProps) {
           <span className="tool-state">{showCandidates ? t('controls.on') : t('controls.off')}</span>
         </button>
       </div>
-      <div className="number-pad" data-note-mode={noteMode || undefined}>
+      <div ref={padRef} className="number-pad" data-note-mode={noteMode || undefined}>
         {DIGITS.map((digit) => (
           <button
             key={digit}
@@ -73,7 +90,7 @@ export function Controls(props: ControlsProps) {
             className="digit"
             aria-label={noteMode ? t('controls.digitNote', { digit }) : t('controls.digitInput', { digit })}
             onClick={() => onDigit(digit)}
-            disabled={disabled}
+            disabled={disabled || completed.has(digit)}
           >
             {digit}
           </button>

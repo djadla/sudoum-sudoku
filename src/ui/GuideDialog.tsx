@@ -2,10 +2,13 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { MessageKey } from '../i18n';
 import { useI18n } from '../i18n/I18nProvider';
 import { AdvancedLessonsPanel, BasicLessonsPanel } from './guide/LessonsPanel';
+import type { LessonTarget } from './guide/lessons';
 
 interface GuideDialogProps {
   readonly open: boolean;
   readonly onClose: () => void;
+  /** 특정 설명으로 열 때 (힌트의 "이 기법 배우기"). 없으면 플레이 방법 탭으로 연다. */
+  readonly target?: LessonTarget | null;
 }
 
 const RULES = ['guide.rule1', 'guide.rule2', 'guide.rule3'] as const satisfies readonly MessageKey[];
@@ -41,7 +44,7 @@ type TabId = (typeof TABS)[number]['id'];
  * 규칙·조작법·단축키 안내와 풀이 설명. 세 탭(플레이 방법 / 기본 풀이 / 고급 풀이)으로 나눈다.
  * 브라우저 기본 모달 `<dialog>`를 써서 바깥 내용 비활성화·Esc 닫기를 브라우저에 맡긴다.
  */
-export function GuideDialog({ open, onClose }: GuideDialogProps) {
+export function GuideDialog({ open, onClose, target }: GuideDialogProps) {
   const { t } = useI18n();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -77,13 +80,15 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
+      // 열 때마다 대상 탭으로 시작한다. (대상이 없으면 플레이 방법)
+      setTab(target?.tab ?? 'play');
       dialog.showModal();
       // 브라우저마다 처음 포커스 위치가 달라 닫기 버튼으로 맞춘다.
       closeRef.current?.focus();
     } else if (!open && dialog.open) {
       dialog.close();
     }
-  }, [open]);
+  }, [open, target]);
 
   return (
     <dialog
@@ -158,8 +163,9 @@ export function GuideDialog({ open, onClose }: GuideDialogProps) {
             </dl>
           </>
         )}
-        {tab === 'basic' && <BasicLessonsPanel />}
-        {tab === 'advanced' && <AdvancedLessonsPanel />}
+        {/* 대상이 바뀌면 그 설명부터 보이도록 key로 다시 만든다. */}
+        {tab === 'basic' && <BasicLessonsPanel key={target?.id ?? 'basic'} initialId={target?.id} />}
+        {tab === 'advanced' && <AdvancedLessonsPanel key={target?.id ?? 'advanced'} initialId={target?.id} />}
       </div>
     </dialog>
   );

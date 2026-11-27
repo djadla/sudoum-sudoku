@@ -332,6 +332,22 @@ button {
   justify-content: center;
 }
 
+/* 고급 풀이: 예제 후보는 흐리게, 근거 후보는 초록 밑줄, 지울 후보는 빨간 취소선 */
+.lesson-notes span:not([data-mark]):not([data-strike]) {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.lesson-notes span[data-mark] {
+  color: var(--hint-pattern-fg);
+  text-decoration: underline 2px var(--hint-pattern-fg);
+}
+
+.lesson-notes span[data-strike] {
+  color: var(--hint-eliminate);
+  text-decoration: line-through 2px var(--hint-eliminate);
+}
+
 .lesson-caption {
   min-height: 3.2em;
   margin-top: 10px;
@@ -566,6 +582,22 @@ kbd {
   margin-top: 6px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.hint-learn {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hint-learn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .hint-actions {

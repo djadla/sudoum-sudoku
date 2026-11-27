@@ -16,6 +16,7 @@ import { GenerationCancelledError, generatePuzzle } from './workers/generatePuzz
 import { Game } from './ui/Game';
 import { LanguageSelect } from './ui/LanguageSelect';
 import { GuideDialog } from './ui/GuideDialog';
+import type { LessonTarget } from './ui/guide/lessons';
 import { NewGameMenu } from './ui/NewGameMenu';
 
 // 게임 이름은 번역하지 않는다. (ADR-0002)
@@ -43,13 +44,23 @@ export function App() {
   const { t } = useI18n();
   const [phase, setPhase] = useState(initialPhase);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guideTarget, setGuideTarget] = useState<LessonTarget | null>(null);
+  // 도움말을 연 요소. 닫으면 그곳으로 포커스를 돌려준다. (도움말 버튼 또는 힌트의 "이 기법 배우기")
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const openGuide = useCallback((target: LessonTarget | null) => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setGuideTarget(target);
+    setGuideOpen(true);
+  }, []);
   // 힌트 버튼을 넣을 자리 (Game이 portal로 채운다)
   const [hintSlot, setHintSlot] = useState<HTMLDivElement | null>(null);
   const guideButtonRef = useRef<HTMLButtonElement>(null);
   const closeGuide = useCallback(() => {
     setGuideOpen(false);
-    // 닫으면 연 버튼으로 포커스를 돌려준다.
-    guideButtonRef.current?.focus();
+    // 닫으면 연 요소로 포커스를 돌려준다. 그 요소가 사라졌으면 도움말 버튼으로.
+    const back = returnFocusRef.current;
+    if (back?.isConnected) back.focus();
+    else guideButtonRef.current?.focus();
   }, []);
   // 새 게임을 연달아 요청하면 마지막 요청의 결과만 반영한다.
   const latestRequest = useRef(0);
@@ -114,14 +125,14 @@ export function App() {
             aria-label={t('guide.button')}
             title={t('guide.button')}
             aria-haspopup="dialog"
-            onClick={() => setGuideOpen(true)}
+            onClick={() => openGuide(null)}
           >
             ?
           </button>
           <LanguageSelect />
         </div>
       </header>
-      <GuideDialog open={guideOpen} onClose={closeGuide} />
+      <GuideDialog open={guideOpen} onClose={closeGuide} target={guideTarget} />
 
       <div className="game-bar">
         {meta}
@@ -135,6 +146,7 @@ export function App() {
           initialState={phase.game}
           onChange={onGameChange}
           hintSlot={hintSlot}
+          onLearn={openGuide}
         />
       ) : (
         <div className="board-placeholder" role="status">

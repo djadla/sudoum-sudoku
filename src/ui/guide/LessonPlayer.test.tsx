@@ -129,12 +129,26 @@ describe('도움말 탭', () => {
     expect(within(panel).getByText('Step 1 of 4')).toBeTruthy(); // 기법을 바꾸면 처음부터
   });
 
-  it('고급 풀이 탭은 기법 이름과 설명을 보여 준다', () => {
+  it('고급 풀이 탭에서 기법 6개를 골라 후보를 지우는 설명을 본다', () => {
     const dialog = openGuide();
     fireEvent.click(within(dialog).getByRole('tab', { name: 'Advanced solving' }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getByText('X-Wing')).toBeTruthy();
-    expect(within(panel).getByText('Y-Wing')).toBeTruthy();
-    expect(within(panel).getByText(/coming in the next update/)).toBeTruthy();
+    const chips = [...panel.querySelectorAll('.lesson-chips button')].map((b) => b.textContent);
+    expect(chips).toEqual(['Pointing', 'Naked Pair', 'Naked Triple', 'Hidden Pair', 'X-Wing', 'Y-Wing']);
+    expect(within(panel).getByText('Look at the candidates for 5 in box 1 (top left).')).toBeTruthy();
+    // 예제 후보와 근거 후보(밑줄)를 보여 준다.
+    expect(panel.querySelectorAll('.lesson-notes').length).toBeGreaterThan(5);
+    expect(panel.querySelectorAll('.lesson-notes [data-mark]').length).toBe(2);
+  });
+
+  it('후보를 지우는 단계에서는 지울 후보에 취소선을 긋는다', () => {
+    const dialog = openGuide();
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Advanced solving' }));
+    const panel = within(dialog).getByRole('tabpanel');
+    fireEvent.click(within(panel).getByRole('button', { name: 'X-Wing' }));
+    for (let i = 0; i < 3; i++) fireEvent.click(within(panel).getByRole('button', { name: 'Next step' }));
+    expect(within(panel).getByText('Step 4 of 4')).toBeTruthy();
+    const struck = [...panel.querySelectorAll('.lesson-notes [data-strike]')].map((e) => e.textContent);
+    expect(struck).toEqual(['4', '4', '4']);
   });
 });

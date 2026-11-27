@@ -42,7 +42,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 
   return (
     <figure className="lesson-player">
-      <LessonBoard values={lesson.values} frame={frame} />
+      <LessonBoard values={lesson.values} notes={lesson.notes} frame={frame} />
       {/* 자동 재생 중에는 바뀔 때마다 읽지 않고, 직접 넘길 때만 읽어 준다. */}
       <figcaption className="lesson-caption" aria-live={playing ? 'off' : 'polite'}>
         <span className="lesson-step">{t('lesson.step', { n: step + 1, total })}</span>

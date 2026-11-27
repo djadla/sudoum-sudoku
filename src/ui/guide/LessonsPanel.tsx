@@ -1,22 +1,30 @@
 import { useState } from 'react';
+import type { PlainMessageKey } from '../../i18n';
 import { useI18n } from '../../i18n/I18nProvider';
 import { LessonPlayer } from './LessonPlayer';
-import { ADVANCED_TOPICS, BASIC_LESSONS } from './lessons';
+import { ADVANCED_LESSONS, BASIC_LESSONS, type Lesson } from './lessons';
+
+interface LessonsPanelProps {
+  readonly lessons: readonly Lesson[];
+  readonly intro: PlainMessageKey;
+  /** 처음에 보여 줄 기법 (힌트의 "이 기법 배우기"로 열 때) */
+  readonly initialId?: string;
+}
 
 /**
- * 기본 풀이 탭: 기법을 하나 골라 움직이는 설명을 본다.
+ * 풀이 탭: 기법을 하나 골라 움직이는 설명을 본다.
  * 여러 애니메이션이 한꺼번에 움직이면 산만하므로 한 번에 하나만 보여 준다.
  */
-export function BasicLessonsPanel() {
+function LessonsPanel({ lessons, intro, initialId }: LessonsPanelProps) {
   const { t } = useI18n();
-  const [selected, setSelected] = useState(0);
-  const lesson = BASIC_LESSONS[selected]!;
+  const [selected, setSelected] = useState(() => Math.max(0, lessons.findIndex((l) => l.id === initialId)));
+  const lesson = lessons[selected]!;
 
   return (
     <div className="lessons">
-      <p className="lesson-intro">{t('lesson.basicIntro')}</p>
+      <p className="lesson-intro">{t(intro)}</p>
       <div className="lesson-chips" role="group" aria-label={t('lesson.lessonsLabel')}>
-        {BASIC_LESSONS.map((item, index) => (
+        {lessons.map((item, index) => (
           <button
             key={item.id}
             type="button"
@@ -36,20 +44,10 @@ export function BasicLessonsPanel() {
   );
 }
 
-/** 고급 풀이 탭: 지금은 기법별 한 줄 설명. (움직이는 설명은 다음 업데이트) */
-export function AdvancedLessonsPanel() {
-  const { t } = useI18n();
-  return (
-    <div className="lessons">
-      <p className="lesson-intro">{t('lesson.advancedIntro')}</p>
-      <dl className="lesson-topics">
-        {ADVANCED_TOPICS.map((topic) => (
-          <div key={topic.title}>
-            <dt>{t(topic.title)}</dt>
-            <dd>{t(topic.summary)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
+export function BasicLessonsPanel({ initialId }: { readonly initialId?: string }) {
+  return <LessonsPanel lessons={BASIC_LESSONS} intro="lesson.basicIntro" initialId={initialId} />;
+}
+
+export function AdvancedLessonsPanel({ initialId }: { readonly initialId?: string }) {
+  return <LessonsPanel lessons={ADVANCED_LESSONS} intro="lesson.advancedIntro" initialId={initialId} />;
 }

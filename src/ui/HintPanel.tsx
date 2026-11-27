@@ -12,13 +12,15 @@ interface HintPanelProps {
   readonly state: HintPanelState;
   readonly onApply: () => void;
   readonly onClose: () => void;
+  /** 이 기법의 설명을 연다. 설명이 없는 힌트면 undefined (버튼을 보이지 않는다) */
+  readonly onLearn?: () => void;
 }
 
 /**
  * 힌트 설명 영역. 숫자 패드 자리에 대신 보여 주어 화면 높이를 늘리지 않는다.
  * 새 내용은 화면 낭독기가 읽도록 aria-live로 알리고, 힌트가 나오면 "적용" 버튼에 포커스를 준다.
  */
-export function HintPanel({ state, onApply, onClose }: HintPanelProps) {
+export function HintPanel({ state, onApply, onClose, onLearn }: HintPanelProps) {
   const { t } = useI18n();
   const titleId = useId();
   const applyRef = useRef<HTMLButtonElement>(null);
@@ -41,6 +43,11 @@ export function HintPanel({ state, onApply, onClose }: HintPanelProps) {
           </h2>
           <p className="hint-body">{state.text.body}</p>
           {state.text.removals && <p className="hint-removals">{state.text.removals}</p>}
+          {onLearn && (
+            <button type="button" className="hint-learn" onClick={onLearn}>
+              {t('hint.learn')}
+            </button>
+          )}
         </>
       ) : (
         <p id={titleId} className="hint-body">

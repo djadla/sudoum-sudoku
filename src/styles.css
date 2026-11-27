@@ -166,6 +166,213 @@ button {
   color: var(--muted);
 }
 
+/* 도움말 탭 */
+.guide-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  border-bottom: 1px solid var(--line-thin);
+}
+
+.guide-tab {
+  flex: 1;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.guide-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+}
+
+.guide-tab:focus-visible,
+.guide-panel:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.guide-panel {
+  padding-top: 4px;
+}
+
+/* 풀이 설명 */
+.lesson-intro,
+.lesson-summary {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.lesson-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.lesson-chips .tool[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.lesson-player {
+  margin: 12px 0 0;
+}
+
+.lesson-board {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border: 2px solid var(--line-thick);
+  background: var(--line-thin);
+  gap: 1px;
+}
+
+.lesson-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: clamp(12px, 3.6vw, 17px);
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.lesson-cell.box-right {
+  box-shadow: inset -2px 0 0 var(--line-thick);
+}
+
+.lesson-cell.box-bottom {
+  box-shadow: inset 0 -2px 0 var(--line-thick);
+}
+
+.lesson-cell.box-right.box-bottom {
+  box-shadow:
+    inset -2px 0 0 var(--line-thick),
+    inset 0 -2px 0 var(--line-thick);
+}
+
+.lesson-cell[data-region] {
+  background: var(--hint-region-bg);
+}
+
+.lesson-cell[data-pattern] {
+  background: var(--hint-pattern-bg);
+  outline: 2px solid var(--hint-region);
+  outline-offset: -2px;
+}
+
+/* 숫자가 들어갈 수 없는 칸: 빗금 (색만으로 구분하지 않는다) */
+.lesson-cell[data-shade] {
+  background: repeating-linear-gradient(135deg, var(--conflict-stripe) 0 3px, transparent 3px 7px), var(--surface);
+}
+
+.lesson-cell[data-focus] {
+  outline: 3px solid var(--hint-focus);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.lesson-cell[data-placed] {
+  color: var(--entered);
+  animation: lesson-pop 0.4s ease;
+}
+
+@keyframes lesson-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-cell {
+    transition: none;
+  }
+
+  .lesson-cell[data-placed] {
+    animation: none;
+  }
+}
+
+.lesson-notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  color: var(--hint-pattern-fg);
+  font-size: clamp(9px, 2.6vw, 12px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.lesson-notes span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lesson-caption {
+  min-height: 3.2em;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.lesson-step {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.lesson-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lesson-controls .tool {
+  flex: 0 0 56px;
+}
+
+.lesson-topics {
+  margin: 12px 0 0;
+}
+
+.lesson-topics div + div {
+  margin-top: 12px;
+}
+
+.lesson-topics dt {
+  font-weight: 700;
+}
+
+.lesson-topics dd {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 kbd {
   display: inline-block;
   padding: 2px 6px;

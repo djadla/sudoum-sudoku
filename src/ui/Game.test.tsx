@@ -275,4 +275,49 @@ describe('Game', () => {
     expect(button.querySelector('.label-narrow')!.getAttribute('aria-hidden')).toBeNull();
     expect(button.textContent).toContain('Cands');
   });
+
+  it('보드에 9개가 모두 놓인 숫자의 버튼은 비활성화하고, 하나를 지우면 다시 활성화한다', async () => {
+    const { user, cells } = setup();
+    // 빈칸이 가장 적은 숫자를 골라 그 숫자의 빈칸을 모두 정답으로 채운다.
+    const digit = answer;
+    const spots = puzzle.givens.flatMap((value, index) => (value === 0 && puzzle.solution[index] === digit ? [index] : []));
+    const button = () => screen.getByRole('button', { name: `Enter ${digit}` }) as HTMLButtonElement;
+    expect(button().disabled).toBe(false);
+
+    for (const index of spots) {
+      await user.click(cells[index]!);
+      await user.keyboard(String(digit));
+    }
+    expect(button().disabled).toBe(true);
+    // 다른 숫자 버튼은 그대로
+    const other = (digit % 9) + 1;
+    expect((screen.getByRole('button', { name: `Enter ${other}` }) as HTMLButtonElement).disabled).toBe(
+      puzzle.solution.filter((v) => v === other).length === puzzle.givens.filter((v) => v === other).length,
+    );
+
+    // 메모 모드에서도 비활성화
+    await user.keyboard('n');
+    expect((screen.getByRole('button', { name: `Toggle note ${digit}` }) as HTMLButtonElement).disabled).toBe(true);
+    await user.keyboard('n');
+
+    await user.click(cells[spots[0]!]!);
+    await user.keyboard('{Backspace}');
+    expect(button().disabled).toBe(false);
+  });
+
+  it('숫자 버튼으로 9번째를 채워 그 버튼이 비활성화되면 다음 숫자 버튼으로 포커스를 옮긴다', async () => {
+    const { user, cells } = setup();
+    const digit = answer;
+    const spots = puzzle.givens.flatMap((value, index) => (value === 0 && puzzle.solution[index] === digit ? [index] : []));
+    const button = screen.getByRole('button', { name: `Enter ${digit}` }) as HTMLButtonElement;
+    for (const index of spots) {
+      await user.click(cells[index]!);
+      await user.click(button); // 숫자 버튼으로 입력 → 포커스는 그 버튼에 있다
+    }
+    expect(button.disabled).toBe(true);
+    const focused = document.activeElement as HTMLButtonElement;
+    expect(focused.closest('.number-pad')).not.toBeNull();
+    expect(focused.disabled).toBe(false);
+    expect(focused).not.toBe(button);
+  });
 });

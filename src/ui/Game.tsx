@@ -5,6 +5,7 @@ import {
   canRedo,
   canUndo,
   canUseHint,
+  completedDigits,
   findWrongValue,
   gameReducer,
   type GameAction,
@@ -231,6 +232,7 @@ export function Game({ initialState, onChange, hintSlot, onLearn }: GameProps) {
       ) : (
       <Controls
         noteMode={state.noteMode}
+        completed={completedDigits(state.values)}
         disabled={solved}
         canUndo={canUndo(state)}
         canRedo={canRedo(state)}

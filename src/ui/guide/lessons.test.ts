@@ -66,6 +66,21 @@ function verifyAdvanced(lesson: Lesson) {
   );
 
   switch (claim.kind) {
+    case 'claiming': {
+      unitSize(claim.line);
+      unitSize(claim.box);
+      expect(claim.box.filter((cell) => claim.line.includes(cell))).toHaveLength(3);
+      shown(claim.line);
+      shown(claim.box);
+      const spots = holders(claim.line, claim.digit);
+      expect(spots.length).toBeGreaterThanOrEqual(2);
+      expect(spots.every((cell) => claim.box.includes(cell))).toBe(true);
+      const expected = holders(claim.box, claim.digit)
+        .filter((cell) => !claim.line.includes(cell))
+        .map((index) => ({ index, digit: claim.digit }));
+      expect(sortedKeys(claim.eliminations)).toEqual(sortedKeys(expected));
+      break;
+    }
     case 'pointing': {
       unitSize(claim.box);
       unitSize(claim.line);
@@ -315,6 +330,20 @@ describe('lessonForHint', () => {
     ['swordfish', null],
   ] as const)('%s → %o', (tactic, expected) => {
     expect(lessonForHint(technique(tactic))).toEqual(expected);
+  });
+
+  it('포인팅 힌트는 방향에 맞는 설명으로 연결한다', () => {
+    const base = technique('pointing');
+    if (base.kind !== 'technique') throw new Error('technique');
+    // 박스 → 줄: 1행의 패턴 칸, 지울 칸도 1행
+    const boxToLine: HintView = { ...base, patternCells: [0, 2], eliminations: [{ index: 6, digit: 5 }] };
+    // 줄 → 박스: 5행의 패턴 칸, 지울 칸은 같은 박스의 다른 행
+    const lineToBox: HintView = { ...base, patternCells: [36, 37], eliminations: [{ index: 27, digit: 3 }] };
+    expect(lessonForHint(boxToLine)).toEqual({ tab: 'advanced', id: 'pointing' });
+    expect(lessonForHint(lineToBox)).toEqual({ tab: 'advanced', id: 'claiming' });
+    // 지울 칸이 줄 밖이면서 박스 밖이기도 하면(예상 밖 데이터) 방향을 판정하지 않고 기본 설명으로 연결한다.
+    const mixed: HintView = { ...base, patternCells: [36, 37], eliminations: [{ index: 80, digit: 3 }] };
+    expect(lessonForHint(mixed)).toEqual({ tab: 'advanced', id: 'pointing' });
   });
 
   it('메모 점검은 후보 적기 설명으로, 틀린 숫자는 설명 없음', () => {

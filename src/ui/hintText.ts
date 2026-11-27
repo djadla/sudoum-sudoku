@@ -33,19 +33,35 @@ function removals(t: Translate, eliminations: readonly CellDigit[]): string | nu
   return t('hint.removeList', { items: list(items) });
 }
 
-/** 포인팅: 패턴 칸이 놓인 박스와 줄을 찾고, 지울 칸이 줄 쪽이면 박스→줄, 박스 쪽이면 줄→박스 방향이다. */
-function pointingBody(t: Translate, hint: Extract<HintView, { kind: 'technique' }>, digit: number): string | null {
+export interface PointingShape {
+  readonly direction: 'boxToLine' | 'lineToBox';
+  readonly box: House;
+  readonly line: House;
+}
+
+/**
+ * 포인팅 힌트의 모양. 패턴 칸이 놓인 박스와 줄을 찾고, 지울 칸이 모두 줄 위면 박스 → 줄,
+ * 모두 같은 박스 안이면 줄 → 박스다. 어느 쪽도 아니면(데이터가 예상과 다르면) null.
+ * 힌트 문장(pointingBody)과 "이 기법 배우기" 연결(lessonForHint)이 같은 판정을 쓰도록 하나로 둔다.
+ */
+export function pointingShape(hint: Extract<HintView, { kind: 'technique' }>): PointingShape | null {
   const pattern = hint.patternCells;
   const line = commonHouse(pattern);
-  // 지울 후보가 없으면 every()가 참이 되어 사실과 다른 방향을 고를 수 있으므로 공통 문장으로 보낸다.
+  // 지울 후보가 없으면 every()가 참이 되어 사실과 다른 방향을 고를 수 있으므로 판정하지 않는다.
   if (pattern.length === 0 || hint.eliminations.length === 0 || !line || line.kind === 'box') return null;
   const box: House = { kind: 'box', index: boxOf(pattern[0]!) };
   if (!pattern.every((cell) => boxOf(cell) === box.index)) return null;
   const inLine = (cell: number) => (line.kind === 'row' ? rowOf(cell) : colOf(cell)) === line.index;
-  const params = { box: houseName(t, box), line: houseName(t, line), digit };
-  if (hint.eliminations.every(({ index }) => inLine(index))) return t('hint.body.pointingBoxToLine', params);
-  if (hint.eliminations.every(({ index }) => boxOf(index) === box.index)) return t('hint.body.pointingLineToBox', params);
+  if (hint.eliminations.every(({ index }) => inLine(index))) return { direction: 'boxToLine', box, line };
+  if (hint.eliminations.every(({ index }) => boxOf(index) === box.index)) return { direction: 'lineToBox', box, line };
   return null;
+}
+
+function pointingBody(t: Translate, hint: Extract<HintView, { kind: 'technique' }>, digit: number): string | null {
+  const shape = pointingShape(hint);
+  if (!shape) return null;
+  const params = { box: houseName(t, shape.box), line: houseName(t, shape.line), digit };
+  return t(shape.direction === 'boxToLine' ? 'hint.body.pointingBoxToLine' : 'hint.body.pointingLineToBox', params);
 }
 
 /** X-Wing: 네 칸의 두 행·두 열 중, 지울 칸이 놓인 쪽이 교차선(crosses)이고 반대쪽이 기준선(lines)이다. */

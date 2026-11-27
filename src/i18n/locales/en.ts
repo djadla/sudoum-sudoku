@@ -178,10 +178,19 @@ const en = {
       s3: 'So R5C5 must be 7.',
     },
     pointing: {
+      title: 'Pointing (box → line)',
       s1: 'Look at the candidates for 5 in box 1 (top left).',
       s2: "Inside the box, 5 can only be in row 2. So box 1's 5 must sit in row 2.",
       s3: 'So no other cell in row 2 can be 5. Remove those candidates.',
       s4: 'Row 2 now has fewer candidates.',
+    },
+    claiming: {
+      title: 'Pointing (line → box)',
+      summary: "If a number's spots in a row or column all lie inside one box, remove it from the rest of that box.",
+      s1: 'Look at the candidates for 3 in row 5.',
+      s2: "In row 5, 3 can only be inside box 4 (R5C1 and R5C2). So row 5's 3 must sit in box 4.",
+      s3: 'Box 4 gets its 3 from row 5, so no other cell in box 4 can be 3. Remove those candidates.',
+      s4: 'Box 4 now has fewer candidates.',
     },
     nakedPair: {
       s1: 'In row 1, R1C2 and R1C5 have only the candidates 3 and 8.',
@@ -212,7 +221,7 @@ const en = {
       s4: 'R2C2 sees both of them, so it cannot be 3.',
     },
     advanced: {
-      pointing: 'If a number\'s spots inside a box all lie on one line, remove it from the rest of that line. It also works the other way: if a line\'s spots all lie inside one box, remove it from the rest of that box.',
+      pointing: "If a number's spots inside a box all lie on one row or column, remove it from the rest of that row or column.",
       nakedPair: 'If two cells in the same row, column or box have the same two candidates and nothing else, those two numbers belong to them. Remove both numbers from the other cells there.',
       nakedTriple: 'If three cells in the same unit hold only three numbers between them, remove those numbers from the other cells of that unit.',
       hiddenPair: 'If two numbers can only go in the same two cells of a unit, those cells cannot hold anything else. Remove their other candidates.',

@@ -134,7 +134,15 @@ describe('도움말 탭', () => {
     fireEvent.click(within(dialog).getByRole('tab', { name: 'Advanced solving' }));
     const panel = within(dialog).getByRole('tabpanel');
     const chips = [...panel.querySelectorAll('.lesson-chips button')].map((b) => b.textContent);
-    expect(chips).toEqual(['Pointing', 'Naked Pair', 'Naked Triple', 'Hidden Pair', 'X-Wing', 'Y-Wing']);
+    expect(chips).toEqual([
+      'Pointing (box → line)',
+      'Pointing (line → box)',
+      'Naked Pair',
+      'Naked Triple',
+      'Hidden Pair',
+      'X-Wing',
+      'Y-Wing',
+    ]);
     expect(within(panel).getByText('Look at the candidates for 5 in box 1 (top left).')).toBeTruthy();
     // 예제 후보와 근거 후보(밑줄)를 보여 준다.
     expect(panel.querySelectorAll('.lesson-notes').length).toBeGreaterThan(5);

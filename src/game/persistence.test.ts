@@ -109,7 +109,7 @@ describe('저장 형식 버전', () => {
   it('남은 힌트 횟수를 저장하고 읽는다', () => {
     // 어려움 퍼즐을 실제로 만들면 수 초가 걸리므로(CI에서 시간 초과) 쉬운 퍼즐에 레벨만 바꿔 쓴다.
     // 저장 검증은 난이도와 레벨이 맞는지만 보며, 퍼즐 내용은 그대로 유효하다.
-    const hard = { ...puzzle, difficulty: 'L6' as const };
+    const hard = { ...puzzle, difficulty: 'L5' as const };
     const state = gameReducer(createGame(hard, 3), { type: 'useHint' });
     const parsed = parseSavedGame(roundTrip(toSavedGame('hard', state)))!;
     expect(parsed.version).toBe(2);
@@ -125,6 +125,33 @@ describe('저장 형식 버전', () => {
     expect(parsed).not.toBeNull();
     expect(parsed.version).toBe(2);
     expect(parsed.hintsLeft).toBe(0); // 쉬움은 0회
+  });
+});
+
+describe('난이도 대응 변경 이전의 저장', () => {
+  // 대응표 변경(보통 L4→L3 등) 전에 저장한 진행 중 게임도 이어서 읽는다.
+  it.each([
+    ['medium', 'L4'],
+    ['hard', 'L6'],
+    ['expert', 'L8'],
+    ['master', 'L10'],
+  ] as const)('%s 난이도의 이전 레벨(%s) 저장을 읽는다', (difficulty, level) => {
+    const raw = mutate((r) => {
+      r.difficulty = difficulty;
+      r.puzzle.difficulty = level;
+      r.hintsLeft = 0;
+    });
+    const parsed = parseSavedGame(raw);
+    expect(parsed?.difficulty).toBe(difficulty);
+    expect(parsed?.puzzle.difficulty).toBe(level);
+  });
+
+  it('다른 난이도의 이전 레벨은 받지 않는다 (보통인데 L6)', () => {
+    const raw = mutate((r) => {
+      r.difficulty = 'medium';
+      r.puzzle.difficulty = 'L6';
+    });
+    expect(parseSavedGame(raw)).toBeNull();
   });
 });
 

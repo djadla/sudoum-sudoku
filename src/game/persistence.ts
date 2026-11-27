@@ -1,4 +1,10 @@
-import { DIFFICULTY_LEVELS, HINT_ALLOWANCE, isDifficultyId, type DifficultyId } from '../engine/difficulty';
+import {
+  DIFFICULTY_LEVELS,
+  HINT_ALLOWANCE,
+  LEGACY_DIFFICULTY_LEVELS,
+  isDifficultyId,
+  type DifficultyId,
+} from '../engine/difficulty';
 import { findConflicts } from '../engine/grid';
 import { CELL_COUNT, type Puzzle } from '../engine/types';
 import type { GameState, NoteMask } from './state';
@@ -66,7 +72,11 @@ export function parseSavedGame(raw: unknown): SavedGame | null {
   if (notes.some((mask) => (mask & 1) !== 0)) return null;
   const { givens, solution, seed, difficulty: level } = puzzle;
   if (!isIntArray(givens, 0, 9) || !isIntArray(solution, 1, 9)) return null;
-  if (!Number.isInteger(seed) || level !== DIFFICULTY_LEVELS[raw.difficulty]) return null;
+  // 난이도와 레벨이 맞아야 한다. 대응표를 바꾸기 전에 저장한 게임(이전 레벨)도 이어서 읽는다.
+  const levelMatches =
+    level === DIFFICULTY_LEVELS[raw.difficulty] ||
+    (LEGACY_DIFFICULTY_LEVELS[raw.difficulty] as readonly unknown[]).includes(level);
+  if (!Number.isInteger(seed) || !levelMatches) return null;
   // 정답이 스도쿠 규칙(행·열·박스마다 1~9 한 번씩)을 지켜야 정답대로 채웠을 때 완성할 수 있다.
   // 주어진 숫자는 아래에서 정답과 같은지 확인하므로, 정답이 올바르면 퍼즐도 모순이 없다.
   // (해가 하나뿐인지는 sudoku-core가 필요해 검사하지 않는다. 완성 판정은 저장된 정답으로 한다)

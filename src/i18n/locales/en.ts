@@ -8,6 +8,15 @@ const en = {
   language: {
     label: 'Language',
   },
+  menu: {
+    button: 'Menu',
+    title: 'Settings',
+    theme: 'Theme',
+    themeSystem: 'Match system',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    close: 'Close menu',
+  },
   board: {
     label: 'Sudoku board',
     cellGiven: 'Row {row}, column {col}: {value}, given',

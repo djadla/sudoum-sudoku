@@ -8,6 +8,15 @@ const ko = {
   language: {
     label: '언어',
   },
+  menu: {
+    button: '메뉴',
+    title: '설정',
+    theme: '화면 테마',
+    themeSystem: '시스템 설정',
+    themeLight: '라이트',
+    themeDark: '다크',
+    close: '메뉴 닫기',
+  },
   board: {
     label: '스도쿠 보드',
     cellGiven: '{row}행 {col}열: {value}, 주어진 숫자',

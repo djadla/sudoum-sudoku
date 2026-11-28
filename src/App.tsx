@@ -14,7 +14,7 @@ import { createGame, restoreGame, type GameState } from './game/state';
 import { useI18n } from './i18n/I18nProvider';
 import { GenerationCancelledError, generatePuzzle } from './workers/generatePuzzle';
 import { Game } from './ui/Game';
-import { LanguageSelect } from './ui/LanguageSelect';
+import { AppMenu } from './ui/AppMenu';
 import { GuideDialog } from './ui/GuideDialog';
 import type { LessonTarget } from './ui/guide/lessons';
 import { NewGameMenu } from './ui/NewGameMenu';
@@ -129,7 +129,7 @@ export function App() {
           >
             ?
           </button>
-          <LanguageSelect />
+          <AppMenu />
         </div>
       </header>
       <GuideDialog open={guideOpen} onClose={closeGuide} target={guideTarget} />

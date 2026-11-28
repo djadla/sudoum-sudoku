@@ -153,3 +153,16 @@ export function loadShowCandidates(): boolean {
 export function saveShowCandidates(show: boolean): void {
   write(CANDIDATES_KEY, show ? 'true' : null);
 }
+
+/** 화면 테마. 'system'은 저장하지 않는다(기본값). index.html의 인라인 스크립트도 이 키를 읽는다. */
+export const THEME_KEY = 'sudoum.theme';
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+export function loadTheme(): ThemePreference {
+  const value = read(THEME_KEY);
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
+export function saveTheme(theme: ThemePreference): void {
+  write(THEME_KEY, theme === 'system' ? null : theme);
+}

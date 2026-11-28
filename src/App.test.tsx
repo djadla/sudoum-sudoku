@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
@@ -127,6 +127,54 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('button', { name: 'Hard' })).toBeNull();
     expect(requests).toHaveLength(1);
+  });
+
+  it('☰ 메뉴와 새 게임 메뉴는 동시에 열리지 않는다 (한쪽을 열면 다른 쪽이 닫힘)', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    const menu = screen.getByRole('button', { name: 'Menu' });
+    const newGame = screen.getByRole('button', { name: 'New game' });
+
+    await user.click(newGame);
+    expect(newGame.getAttribute('aria-expanded')).toBe('true');
+    await user.click(menu);
+    expect(menu.getAttribute('aria-expanded')).toBe('true');
+    expect(newGame.getAttribute('aria-expanded')).toBe('false');
+
+    await user.click(newGame);
+    expect(newGame.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.getAttribute('aria-expanded')).toBe('false');
+
+    // Esc 한 번에 열린 메뉴 하나만 닫힌다.
+    await user.keyboard('{Escape}');
+    expect(newGame.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(newGame);
+  });
+
+  it('메뉴가 열린 채 보드 칸을 누르면 메뉴는 닫히고 칸은 선택된다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    const firstEmpty = easy.givens.findIndex((value) => value === 0);
+    for (const name of ['Menu', 'New game']) {
+      const toggle = screen.getByRole('button', { name });
+      await user.click(toggle);
+      await user.click(cells()[firstEmpty]!);
+      expect(toggle.getAttribute('aria-expanded'), name).toBe('false');
+      expect(cells()[firstEmpty]!.getAttribute('aria-selected'), name).toBe('true');
+    }
+  });
+
+  it('☰ 메뉴가 열려 있는 동안 누른 숫자 키는 보드에 입력하지 않는다', async () => {
+    const user = userEvent.setup();
+    renderWithI18n(<App />);
+    await resolveLast(easy);
+    const firstEmpty = easy.givens.findIndex((value) => value === 0);
+    await user.click(cells()[firstEmpty]!);
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.keyboard('5');
+    expect(cells()[firstEmpty]!.textContent).toBe('');
   });
 
   it('메뉴 안에서 누른 숫자 키는 보드에 입력하지 않는다', async () => {
@@ -262,7 +310,8 @@ describe('App', () => {
 
       const panel = await screen.findByRole('region', { name: /Single|Pointing|Pair/ });
       expect(within(panel).getByRole('button', { name: 'Apply' })).toBeTruthy();
-      expect(document.activeElement?.textContent).toBe('Apply');
+      // 포커스는 힌트 영역이 그려진 뒤 effect에서 옮기므로 기다린다. (바로 검사하면 간헐적으로 실패한다)
+      await waitFor(() => expect(document.activeElement?.textContent).toBe('Apply'));
       expect(screen.queryByRole('button', { name: 'Enter 1' })).toBeNull(); // 숫자 패드 대신 힌트
       expect((screen.getByRole('button', { name: 'Hint 0' }) as HTMLButtonElement).disabled).toBe(true);
       expect(savedJson().hintsLeft).toBe(0);
@@ -325,13 +374,26 @@ describe('App', () => {
       expect(screen.queryByRole('region')).toBeNull();
     });
 
-    it('메뉴가 열린 채 도움말을 열면, 대화상자 안의 Esc는 메뉴가 가로채지 않는다', async () => {
+    it('마우스로 도움말을 열면 열려 있던 메뉴는 닫힌다', async () => {
       const user = userEvent.setup();
       await startMedium();
       const toggle = screen.getByRole('button', { name: 'New game' });
       await user.click(toggle);
       await user.click(screen.getByRole('button', { name: 'How to play' }));
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('메뉴를 연 채 도움말을 열면, 대화상자 안의 Esc는 메뉴가 가로채지 않는다', async () => {
+      const user = userEvent.setup();
+      await startMedium();
+      const toggle = screen.getByRole('button', { name: 'New game' });
+      await user.click(toggle);
+      // 마우스로 도움말 버튼을 누르면 바깥 클릭으로 메뉴가 닫힌다. 키보드로 열면 메뉴가 열린 채 남으므로 이 경로를 검사한다.
+      screen.getByRole('button', { name: 'How to play' }).focus();
+      await user.keyboard('{Enter}');
       const dialog = screen.getByRole('dialog') as HTMLDialogElement;
+      expect(dialog.open).toBe(true);
+      expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
       const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
       act(() => {

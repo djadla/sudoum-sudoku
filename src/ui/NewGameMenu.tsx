@@ -36,8 +36,19 @@ export function NewGameMenu({ current, onNewGame }: NewGameMenuProps) {
       setOpen(false);
       toggleRef.current?.focus();
     }
+    // 메뉴 바깥을 누르면 닫는다. ☰ 메뉴와 같은 방식이라, 한쪽 메뉴를 열면 다른 쪽은 저절로 닫힌다.
+    // (누른 곳의 동작은 막지 않는다: 보드 칸을 누르면 메뉴가 닫히고 칸도 선택된다)
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (panelRef.current?.contains(target) || toggleRef.current?.contains(target)) return;
+      setOpen(false);
+    }
     window.addEventListener('keydown', onKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
   }, [open]);
 
   return (

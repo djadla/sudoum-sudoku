@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Play Sudoku in your browser, no sign-up required." />
     <title>Sudoum Sudoku — Brain-training Sudoku</title>
+    <!-- 저장된 화면 테마를 CSS·JavaScript보다 먼저 적용해 다른 테마가 잠깐 보이는 깜빡임을 막는다. (game/persistence.ts THEME_KEY) -->
+    <script>
+      try {
+        var theme = localStorage.getItem('sudoum.theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
